@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+:root{
+  --background:#050608;
+  --surface:#0f1118;
+  --surface2:#161926;
+
+  --border:rgba(255,255,255,.08);
+
+  --blue:#4aa8ff;
+  --purple:#8b5cf6;
+
+  --text:#f5f7ff;
+  --muted:#9aa3b2;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html,
+body{
+  width:100%;
+  height:100%;
+}
+
+body{
+
+  background:
+      radial-gradient(circle at 15% 20%,
+      rgba(45,120,255,.12),
+      transparent 30%),
+
+      radial-gradient(circle at 85% 15%,
+      rgba(151,71,255,.12),
+      transparent 28%),
+
+      linear-gradient(
+      180deg,
+      #090b10,
+      #050608);
+
+  color:var(--text);
+
+  font-family:
+      Inter,
+      Segoe UI,
+      sans-serif;
+
+  overflow:hidden;
+}
+
+::-webkit-scrollbar{
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb{
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Markdown Styling */
+.prose {
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.prose p {
+    margin-bottom: 1em;
+}
+
+.prose p:last-child {
+    margin-bottom: 0;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+    color: #fff;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
+}
+
+.prose h1 { font-size: 1.5em; }
+.prose h2 { font-size: 1.25em; }
+.prose h3 { font-size: 1.1em; }
+
+.prose ul, .prose ol {
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+    padding-left: 1.5em;
+}
+
+.prose ul { list-style-type: disc; }
+.prose ol { list-style-type: decimal; }
+
+.prose li {
+    margin-bottom: 0.25em;
+}
+
+.prose a {
+    color: var(--blue);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.prose blockquote {
+    border-left: 3px solid var(--purple);
+    padding-left: 1em;
+    color: var(--muted);
+    font-style: italic;
+    margin: 1em 0;
+}
+
+.prose code {
+    background: rgba(255,255,255,0.1);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: monospace;
+}
+
+.prose pre {
+    background: #0B0F18 !important;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 1em;
+    overflow-x: auto;
+    margin: 1em 0;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.prose pre code {
+    background: transparent;
+    padding: 0;
+    font-size: 0.9em;
+    color: #e2e8f0;
+}
+
+.prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.prose th, .prose td {
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 0.5em 1em;
+    text-align: left;
+}
+
+.prose th {
+    background: rgba(255,255,255,0.05);
+    font-weight: 600;
+}

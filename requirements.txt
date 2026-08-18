@@ -1,0 +1,7 @@
+groq
+python-dotenv
+pymongo
+sentence-transformers
+simpleeval
+tavily
+bcrypt

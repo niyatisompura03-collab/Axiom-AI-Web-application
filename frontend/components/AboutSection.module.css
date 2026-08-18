@@ -1,0 +1,44 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+}
+
+.field:last-of-type {
+  border-bottom: none;
+}
+
+.label {
+  font-size: 0.95rem;
+  color: #ececec;
+  font-weight: 500;
+}
+
+.value {
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+
+.techStack {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.techStack span {
+  background: rgba(139, 92, 246, 0.1);
+  color: #c4b5fd;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
