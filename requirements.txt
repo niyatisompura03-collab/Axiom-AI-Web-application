@@ -6,3 +6,4 @@ simpleeval
 tavily
 bcrypt
 uvicorn
+fastapi
