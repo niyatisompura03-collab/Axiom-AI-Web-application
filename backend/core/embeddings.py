@@ -1,9 +1,22 @@
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+_model = None
+
+
+def get_embedding_model():
+    global _model
+
+    if _model is None:
+        _model = TextEmbedding(
+            model_name="BAAI/bge-small-en-v1.5"
+        )
+
+    return _model
+
 
 def create_embedding(text):
-    embedding = model.encode(text)
+    model = get_embedding_model()
+
+    embedding = next(model.embed([text]))
+
     return embedding

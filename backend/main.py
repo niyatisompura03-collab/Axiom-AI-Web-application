@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 
 from backend.routes.chat import router as chat_router
@@ -6,6 +7,7 @@ from backend.routes.memories import router as memories_router
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes.auth import router as auth_router
 from dotenv import load_dotenv
+
 
 load_dotenv()
 

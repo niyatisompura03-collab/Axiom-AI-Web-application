@@ -1,7 +1,7 @@
 groq
 python-dotenv
 pymongo
-sentence-transformers
+fastembed
 simpleeval
 tavily
 bcrypt
