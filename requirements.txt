@@ -7,3 +7,4 @@ tavily
 bcrypt
 uvicorn
 fastapi
+python-jose[cryptography]
