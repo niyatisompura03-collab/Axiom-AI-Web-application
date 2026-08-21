@@ -6,8 +6,11 @@ import os
 
 load_dotenv()
 
+import certifi
+
 mongo_client = MongoClient(
-    os.getenv("MONGODB_URI")
+    os.getenv("MONGODB_URI"),
+    tlsCAFile=certifi.where()
 )
 
 db = mongo_client["ai_chatbot"]

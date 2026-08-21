@@ -9,3 +9,4 @@ uvicorn
 fastapi
 python-jose[cryptography]
 passlib
+certifi
