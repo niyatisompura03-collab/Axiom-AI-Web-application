@@ -19,12 +19,14 @@ export async function sendMessage(
   conversation_id: string | null,
   message: string
 ) {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const response = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: getHeaders("application/json"),
     body: JSON.stringify({
       conversation_id,
       message,
+      timezone,
     }),
   });
 

@@ -19,6 +19,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     message: str
+    timezone: Optional[str] = None
 
 class EditMessageRequest(BaseModel):
     message_index: int
@@ -42,7 +43,8 @@ def chat_endpoint(
     result = chat(
         user_id=username,
         conversation_id=request.conversation_id,
-        message=request.message
+        message=request.message,
+        timezone=request.timezone
     )
     return result
 

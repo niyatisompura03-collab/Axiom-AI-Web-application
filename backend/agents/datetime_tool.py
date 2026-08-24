@@ -1,9 +1,21 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+except ImportError:
+    ZoneInfo = None
 
+def _get_tz(timezone_str):
+    if not timezone_str or not ZoneInfo:
+        return timezone.utc
+    try:
+        return ZoneInfo(timezone_str)
+    except ZoneInfoNotFoundError:
+        return timezone.utc
 
-def get_current_time():
+def get_current_time(timezone_str=None):
 
-    now = datetime.now()
+    tz = _get_tz(timezone_str)
+    now = datetime.now(tz)
 
     return {
         "tool": "datetime",
@@ -13,9 +25,10 @@ def get_current_time():
 
 
 
-def get_current_date():
+def get_current_date(timezone_str=None):
 
-    today = datetime.now()
+    tz = _get_tz(timezone_str)
+    today = datetime.now(tz)
 
     return {
         "tool": "datetime",
@@ -25,9 +38,10 @@ def get_current_date():
 
 
 
-def get_relative_date(days):
+def get_relative_date(days, timezone_str=None):
 
-    date = datetime.now() + timedelta(days=days)
+    tz = _get_tz(timezone_str)
+    date = datetime.now(tz) + timedelta(days=days)
 
     return {
         "tool": "datetime",

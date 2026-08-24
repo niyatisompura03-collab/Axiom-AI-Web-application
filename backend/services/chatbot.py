@@ -70,7 +70,7 @@ def generate_conversation_title(user_input: str) -> str:
 # Chat Loop
 # -----------------------
 
-def chat(user_id: str, conversation_id: str, message: str):
+def chat(user_id: str, conversation_id: str, message: str, timezone: str = None):
 
     user_input = message
 
@@ -227,7 +227,7 @@ def chat(user_id: str, conversation_id: str, message: str):
 
     elif tool == "time":
 
-        tool_result = get_current_time()
+        tool_result = get_current_time(timezone)
 
 
     elif tool == "date":
@@ -236,15 +236,15 @@ def chat(user_id: str, conversation_id: str, message: str):
 
         if "tomorrow" in message:
 
-            tool_result = get_relative_date(1)
+            tool_result = get_relative_date(1, timezone)
 
         elif "yesterday" in message:
 
-            tool_result = get_relative_date(-1)
+            tool_result = get_relative_date(-1, timezone)
 
         else:
 
-            tool_result = get_current_date()
+            tool_result = get_current_date(timezone)
 
 
     elif tool == "search":
