@@ -45,9 +45,17 @@ def detect_tool(user_message):
 
     time_keywords = [
         "what time",
+        "what's the time",
+        "what is the time",
         "current time",
+        "what's the current time",
+        "what is the current time",
         "time now",
-        "clock"
+        "time right now",
+        "what time is it",
+        "tell me the time",
+        "can you tell me the time",
+        "do you know the time"
     ]
 
 
