@@ -8,5 +8,5 @@ bcrypt==4.0.1
 uvicorn
 fastapi
 python-jose[cryptography]
-passlib==1.7.5
+passlib
 certifi
