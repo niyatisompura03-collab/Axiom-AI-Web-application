@@ -1,4 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+import os
+import secrets
+import urllib.parse
+import urllib.request
+import urllib.error
+import json
+from fastapi import APIRouter, HTTPException, status, Request, Cookie
+from fastapi.responses import RedirectResponse
 from backend.core.database import (
     users_collection,
     conversation_collection,
@@ -15,6 +22,8 @@ from backend.core.security import (
 from fastapi import Depends
 from pydantic import BaseModel
 from typing import Optional
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 class AuthRequest(BaseModel):
     username: str
@@ -75,7 +84,142 @@ def register(request: AuthRequest):
         f"User {username} registered successfully"
     }
 
+@router.get("/google/login")
+def google_login():
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    
+    if not client_id or not redirect_uri:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+        
+    state = secrets.token_urlsafe(32)
+    
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "offline",
+        "prompt": "consent"
+    }
+    
+    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+    
+    response = RedirectResponse(url=auth_url)
+    response.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        secure=False, # allow local dev
+        samesite="lax",
+        max_age=600,
+        path="/"
+    )
+    return response
 
+@router.get("/google/callback")
+def google_callback(
+    request: Request,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    oauth_state: Optional[str] = Cookie(None)
+):
+    print("STATE FROM GOOGLE:", state)
+    print("STATE FROM COOKIE:", oauth_state)
+
+    if not oauth_state or state != oauth_state:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+        
+    if error:
+        raise HTTPException(status_code=400, detail=f"Google OAuth error: {error}")
+    
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="Missing code or state")
+        
+    if not oauth_state or state != oauth_state:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+        
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    
+    if not client_id or not client_secret or not redirect_uri:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+        
+    token_url = "https://oauth2.googleapis.com/token"
+    data = urllib.parse.urlencode({
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri
+    }).encode("utf-8")
+    
+    req = urllib.request.Request(token_url, data=data, method="POST")
+    try:
+        with urllib.request.urlopen(req) as response:
+            token_response = json.loads(response.read().decode())
+    except urllib.error.URLError:
+        raise HTTPException(status_code=400, detail="Failed to exchange code with Google")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Failed to parse Google response")
+        
+    id_token_jwt = token_response.get("id_token")
+    if not id_token_jwt:
+        raise HTTPException(status_code=400, detail="No id_token received")
+        
+    try:
+        request_adapter = google_requests.Request()
+        id_info = id_token.verify_oauth2_token(
+            id_token_jwt, request_adapter, client_id
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid ID token")
+        
+    google_id = id_info.get("sub")
+    email = id_info.get("email")
+    name = id_info.get("name")
+    
+    user = users_collection.find_one({
+        "$or": [{"google_id": google_id}, {"email": email}]
+    })
+    
+    if user:
+        # Link account if email matches but google_id is missing
+        if not user.get("google_id"):
+            users_collection.update_one(
+                {"_id": user["_id"]},
+                {"$set": {"google_id": google_id, "auth_provider": "google"}}
+            )
+        username = user["username"]
+    else:
+        # Generate unique username
+        base_username = email.split("@")[0] if email else f"user_{google_id[:6]}"
+        username = base_username
+        counter = 1
+        while users_collection.find_one({"username": username}):
+            username = f"{base_username}{counter}"
+            counter += 1
+            
+        new_user = {
+            "username": username,
+            "google_id": google_id,
+            "email": email,
+            "auth_provider": "google",
+            "password_hash": None,
+            "avatar": id_info.get("picture"),
+            "created_at": datetime.now(timezone.utc)
+        }
+        users_collection.insert_one(new_user)
+        
+    token = create_access_token({"sub": username})
+    
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    response = RedirectResponse(url=f"{frontend_url}/?token={token}")
+    response.delete_cookie("oauth_state")
+    return response
 
 @router.post("/login")
 def login(username: str, password: str):
@@ -91,6 +235,12 @@ def login(username: str, password: str):
         raise HTTPException(
             status_code=401,
             detail="Invalid credentials"
+        )
+        
+    if user.get("password_hash") is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Please sign in with Google"
         )
 
 
