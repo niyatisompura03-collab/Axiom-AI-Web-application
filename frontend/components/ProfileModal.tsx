@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import styles from "./SettingsModal.module.css";
-import { User, X, Calendar, Edit2, Check, AlertCircle, Camera } from "lucide-react";
+import { User, X, Calendar, Edit2, Check, AlertCircle, Camera, Mail } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface ProfileModalProps {
@@ -82,10 +82,15 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [isEditing ? editForm.avatar : user?.avatar]);
 
   useEffect(() => {
     if (open) {
@@ -195,8 +200,8 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
             
             <div className="flex flex-col items-center justify-center mb-6 relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(139,92,246,0.3)] mb-4 overflow-hidden border-2 border-white/10">
-                {(isEditing ? editForm.avatar : user?.avatar) ? (
-                  <img src={isEditing ? editForm.avatar : user?.avatar || ""} alt="Avatar" className="w-full h-full object-cover" />
+                {(isEditing ? editForm.avatar : user?.avatar) && !avatarError ? (
+                  <img src={isEditing ? editForm.avatar : user?.avatar || ""} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                 ) : (
                   <User size={48} />
                 )}
@@ -243,13 +248,22 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                 )}
               </div>
               
+              {/* Email Section */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-2 block">Email</label>
+                <div className="flex items-center gap-3 text-gray-300 text-sm">
+                  <Mail size={16} className="text-gray-500" />
+                  <span className={!user?.email ? "text-gray-500 italic" : ""}>{user?.email || "No email associated"}</span>
+                </div>
+              </div>
+              
               {isEditing && (
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
                   <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-3 block">Avatar</label>
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-white overflow-hidden border-2 border-white/10 shrink-0">
-                      {editForm.avatar ? (
-                        <img src={editForm.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      {editForm.avatar && !avatarError ? (
+                        <img src={editForm.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                       ) : (
                         <User size={32} />
                       )}

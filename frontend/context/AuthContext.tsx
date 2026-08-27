@@ -6,6 +6,7 @@ import { saveToken, getToken, removeToken } from "../utils/token";
 
 export interface User {
   username: string;
+  email?: string | null;
   avatar?: string | null;
   dob?: string | null;
 }
@@ -30,6 +31,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     setLoading(true);
     try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+          saveToken(urlToken);
+          // Remove token from URL to keep it clean and prevent leaking
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+
       const token = getToken();
       if (!token) {
         setUser(null);
