@@ -129,6 +129,14 @@ def google_callback(
     print("STATE FROM GOOGLE:", state)
     print("STATE FROM COOKIE:", oauth_state)
 
+    print("========== GOOGLE OAUTH DEBUG ==========")
+    print("REQUEST URL:", str(request.url))
+    print("REQUEST HOST:", request.headers.get("host"))
+    print("STATE FROM GOOGLE:", state)
+    print("STATE FROM COOKIE:", oauth_state)
+    print("ALL REQUEST COOKIES:", request.cookies)
+    print("========================================")
+
     if not oauth_state or state != oauth_state:
         raise HTTPException(status_code=400, detail="Invalid state parameter")
         
