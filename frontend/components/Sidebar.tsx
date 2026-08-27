@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileModal from "@/components/ProfileModal";
 import HelpModal from "@/components/HelpModal";
@@ -35,6 +35,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const [showHelp, setShowHelp] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.avatar]);
   if (loading) return null; // or a spinner
 
   const handleStartEdit = (e: React.MouseEvent, id: string, title: string) => {
@@ -234,7 +239,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                 onClick={() => setIsProfileDropdownOpen(true)}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_rgba(139,92,246,0.3)] overflow-hidden">
-                  {user?.avatar ? <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" /> : <User size={15} />}
+                  {user?.avatar && !avatarError ? <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} /> : <User size={15} />}
                 </div>
                 <div className="flex flex-col truncate">
                   <span className="text-xs font-semibold text-white truncate">{user?.username}</span>
@@ -273,7 +278,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                 title={`${user?.username}`}
                 onClick={() => setIsProfileDropdownOpen(true)}
               >
-                {user?.avatar ? <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" /> : <User size={15} />}
+                {user?.avatar && !avatarError ? <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} /> : <User size={15} />}
               </div>
             ) : (
               <Link href="/login" className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-gray-400 shrink-0 hover:text-white hover:bg-gray-700 transition-colors" title="Log in / Sign up">

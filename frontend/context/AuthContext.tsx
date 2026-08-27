@@ -6,6 +6,7 @@ import { saveToken, getToken, removeToken } from "../utils/token";
 
 export interface User {
   username: string;
+  email?: string | null;
   avatar?: string | null;
   dob?: string | null;
 }

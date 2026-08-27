@@ -188,10 +188,19 @@ def google_callback(
     
     if user:
         # Link account if email matches but google_id is missing
+        updates = {}
         if not user.get("google_id"):
+            updates["google_id"] = google_id
+            updates["auth_provider"] = "google"
+            
+        # Save Google avatar if missing
+        if not user.get("avatar") and id_info.get("picture"):
+            updates["avatar"] = id_info.get("picture")
+            
+        if updates:
             users_collection.update_one(
                 {"_id": user["_id"]},
-                {"$set": {"google_id": google_id, "auth_provider": "google"}}
+                {"$set": updates}
             )
         username = user["username"]
     else:
@@ -278,6 +287,7 @@ def get_me(username: str = Depends(get_current_username)):
     
     return {
         "username": user["username"],
+        "email": user.get("email"),
         "avatar": user.get("avatar"),
         "dob": user.get("dob")
     }
