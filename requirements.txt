@@ -3,7 +3,7 @@ python-dotenv
 pymongo
 fastembed
 simpleeval
-tavily
+tavily-python
 bcrypt==4.0.1
 uvicorn
 fastapi
@@ -11,3 +11,8 @@ python-jose[cryptography]
 passlib
 certifi
 google-auth
+resend
+python-multipart
+pymupdf
+python-docx
+beautifulsoup4

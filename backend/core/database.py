@@ -19,6 +19,8 @@ conversation_collection = db["conversations"]
 memory_collection = db["memories"]
 users_collection = db["users"]
 settings_collection = db["settings"]
+password_reset_collection = db["password_resets"]
+document_collection = db["documents"]
 
 from backend.core.embeddings import create_embedding
 
@@ -104,7 +106,7 @@ def delete_conversation(conversation_id: str, user_id: str = None) -> bool:
     result = conversation_collection.delete_one(query)
     return result.deleted_count > 0
 
-def save_message(conversation_id: str, role: str, content: str, user_id: str = None) -> bool:
+def save_message(conversation_id: str, role: str, content: str, user_id: str = None, document: dict = None) -> bool:
     obj_id = _parse_object_id(conversation_id)
     if not obj_id:
         return False
@@ -115,6 +117,8 @@ def save_message(conversation_id: str, role: str, content: str, user_id: str = N
         "content": content,
         "timestamp": now
     }
+    if document:
+        message_item["document"] = document
 
     query = {"_id": obj_id}
     if user_id:
@@ -268,3 +272,43 @@ def get_active_memories(user_id: str, category: str | None = None) -> list:
             "updated_at": doc.get("updated_at")
         })
     return memories
+
+def save_document(user_id: str, filename: str, mime_type: str, doc_type: str, content: str) -> dict:
+    now = datetime.now(timezone.utc)
+    doc = {
+        "user_id": user_id,
+        "filename": filename,
+        "mime_type": mime_type,
+        "type": doc_type,
+        "content": content,
+        "created_at": now
+    }
+    result = document_collection.insert_one(doc)
+    doc["_id"] = str(result.inserted_id)
+    doc["document_id"] = doc["_id"]
+    return doc
+
+def get_document(document_id: str, user_id: str = None) -> dict:
+    obj_id = _parse_object_id(document_id)
+    if not obj_id:
+        return None
+    query = {"_id": obj_id}
+    if user_id:
+        query["user_id"] = user_id
+    doc = document_collection.find_one(query)
+    if doc:
+        doc["_id"] = str(doc["_id"])
+        doc["document_id"] = doc["_id"]
+    return doc
+
+def update_conversation_active_document(conversation_id: str, document_id: str, user_id: str = None) -> bool:
+    obj_id = _parse_object_id(conversation_id)
+    if not obj_id:
+        return False
+    query = {"_id": obj_id}
+    if user_id:
+        query["user_id"] = user_id
+    update = {"$set": {"active_document_id": document_id, "updated_at": datetime.now(timezone.utc)}}
+    result = conversation_collection.update_one(query, update)
+    return result.modified_count > 0
+

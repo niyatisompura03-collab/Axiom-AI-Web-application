@@ -20,6 +20,8 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     message: str
     timezone: Optional[str] = None
+    document_id: Optional[str] = None
+
 
 class EditMessageRequest(BaseModel):
     message_index: int
@@ -44,7 +46,8 @@ def chat_endpoint(
         user_id=username,
         conversation_id=request.conversation_id,
         message=request.message,
-        timezone=request.timezone
+        timezone=request.timezone,
+        document_id=request.document_id
     )
     return result
 

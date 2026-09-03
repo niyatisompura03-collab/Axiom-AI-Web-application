@@ -7,6 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
+  document?: {
+    document_id: string;
+    filename: string;
+    mime_type?: string;
+    type?: string;
+    content?: string; // base64
+  };
 }
 
 interface ChatWindowProps {
@@ -74,6 +81,7 @@ export default function ChatWindow({
                         key={index}
                         role={message.role}
                         content={message.content}
+                        document={message.document}
                         isLast={index === messages.length - 1}
                         index={index}
                     />

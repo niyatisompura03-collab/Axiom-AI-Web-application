@@ -17,17 +17,21 @@ function getHeaders(contentType?: string): Record<string, string> {
 
 export async function sendMessage(
   conversation_id: string | null,
-  message: string
+  message: string,
+  document_id?: string
 ) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const response = await fetch(`${API_URL}/chat`, {
-    method: "POST",
-    headers: getHeaders("application/json"),
-    body: JSON.stringify({
+  const body: any = {
       conversation_id,
       message,
       timezone,
-    }),
+  };
+  if (document_id) body.document_id = document_id;
+  
+  const response = await fetch(`${API_URL}/chat`, {
+    method: "POST",
+    headers: getHeaders("application/json"),
+    body: JSON.stringify(body),
   });
 
   if (response.status === 401) {
@@ -162,6 +166,28 @@ export async function editMessageApi(
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.detail || "Failed to edit message");
+  }
+
+  return response.json();
+}
+
+export async function uploadDocumentApi(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  
+  const response = await fetch(`${API_URL}/documents/upload`, {
+    method: "POST",
+    headers: getHeaders(), // Do not set Content-Type, fetch sets it with boundary
+    body: formData,
+  });
+
+  if (response.status === 401) {
+    window.dispatchEvent(new Event('auth:unauthorized'));
+    throw new Error('Unauthorized');
+  }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to upload document");
   }
 
   return response.json();

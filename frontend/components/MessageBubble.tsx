@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
-import { Copy, RefreshCw, Check, Edit2 } from "lucide-react";
+import { Copy, RefreshCw, Check, Edit2, FileText } from "lucide-react";
 import { useChat } from "@/context/ChatContext";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
@@ -14,13 +14,21 @@ interface MessageProps {
   content: string;
   isLast?: boolean;
   index: number;
+  document?: {
+    document_id: string;
+    filename: string;
+    mime_type?: string;
+    type?: string;
+    content?: string;
+  };
 }
 
 export default function MessageBubble({
   role,
   content,
   isLast = false,
-  index
+  index,
+  document
 }: MessageProps) {
   const isUser = role === "user";
   const { regenerateResponse, editMessage } = useChat();
@@ -145,6 +153,28 @@ export default function MessageBubble({
               <p className="text-[10px] uppercase tracking-[0.2em] text-violet-400 font-semibold">
                 AXIOM
               </p>
+            </div>
+          )}
+
+          {document && (
+            <div className="mb-3 max-w-full">
+              {document.type === 'image' && document.content ? (
+                <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-lg inline-block max-w-full">
+                  <img 
+                    src={`data:${document.mime_type || 'image/png'};base64,${document.content}`} 
+                    alt={document.filename}
+                    className="max-w-full h-auto max-h-[300px] object-contain bg-black/40"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs text-gray-200 truncate border-t border-white/10">
+                    {document.filename}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 bg-black/20 border border-white/10 px-3 py-2 rounded-lg text-sm max-w-[250px] md:max-w-[350px]">
+                  <FileText size={16} className={isUser ? "text-cyan-400 shrink-0" : "text-violet-400 shrink-0"} />
+                  <span className="truncate opacity-90">{document.filename}</span>
+                </div>
+              )}
             </div>
           )}
 

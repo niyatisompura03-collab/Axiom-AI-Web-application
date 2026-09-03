@@ -24,6 +24,13 @@ export type Message = {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp?: string;
+  document?: {
+    document_id: string;
+    filename: string;
+    mime_type?: string;
+    type?: string;
+    content?: string; // base64 for images
+  };
 };
 
 export type ConversationSummary = {
@@ -53,6 +60,9 @@ interface ChatContextType {
   regenerateResponse: () => Promise<void>;
   startNewChat: () => Promise<void>;
   editMessage: (index: number, newContent: string) => Promise<void>;
+
+  activeDocument: { document_id: string; filename: string; content?: string } | null;
+  setActiveDocument: React.Dispatch<React.SetStateAction<{ document_id: string; filename: string; content?: string } | null>>;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -65,6 +75,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const [input, setInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(true);
+  const [activeDocument, setActiveDocument] = useState<{ document_id: string; filename: string } | null>(null);
   const { loading: authLoading, isAuthenticated, user } = useAuth();
   const refreshConversationList = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -176,6 +187,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setConversationId(null);
     setMessages([]);
     setSelectedConversation(null);
+    setActiveDocument(null);
   }, []);
 
   // Initial load respecting auth state
@@ -218,6 +230,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const validCustomMessage = typeof customMessage === "string" ? customMessage : undefined;
     const textToSend = validCustomMessage || input;
     
+    // Always require the user to type a message — the document alone is not enough
     if (!textToSend.trim()) return;
 
     if (!validCustomMessage) {
@@ -226,20 +239,31 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     setMessages((prev) => [
       ...prev,
-      {
-        role: "user",
+      { 
+        role: "user", 
         content: textToSend,
+        document: activeDocument ? {
+          document_id: activeDocument.document_id,
+          filename: activeDocument.filename,
+          type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image' : 'text',
+          mime_type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image/' + activeDocument.filename.split('.').pop() : undefined,
+          content: activeDocument.content
+        } : undefined
       },
       {
         role: "assistant",
         content: "Thinking...",
       },
     ]);
+    
+    const currentActiveDocId = activeDocument?.document_id;
+    setActiveDocument(null); // Clear from composer immediately
 
     try {
       const response = await sendChatMessage(
         conversationId,
-        textToSend
+        textToSend,
+        currentActiveDocId
       );
 
       const activeConvId = response?.conversation_id || conversationId;
@@ -436,6 +460,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         regenerateResponse,
         startNewChat,
         editMessage,
+        activeDocument,
+        setActiveDocument,
       }}
     >
       {children}
