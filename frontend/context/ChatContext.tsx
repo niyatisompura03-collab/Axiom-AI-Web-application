@@ -246,8 +246,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           document_id: activeDocument.document_id,
           filename: activeDocument.filename,
           type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image' : 'text',
-          mime_type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image/' + activeDocument.filename.split('.').pop() : undefined,
-          content: activeDocument.content
+          mime_type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image/' + activeDocument.filename.split('.').pop() : undefined
         } : undefined
       },
       {
