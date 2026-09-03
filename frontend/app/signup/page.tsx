@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { User, Lock } from "lucide-react";
+import { User, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import AuthCard from "@/components/AuthCard";
 import AuthInput from "@/components/AuthInput";
@@ -16,6 +16,7 @@ export default function SignupPage() {
     window.location.href = `${API_URL}/auth/google/login`;
   };
 
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,7 +36,7 @@ export default function SignupPage() {
 
     try {
       setLoading(true);
-      await registerUser(username, password);
+      await registerUser(username, password, email);
       // Auto-login the newly created user
       await login(username, password);
       router.push('/');
@@ -63,6 +64,17 @@ export default function SignupPage() {
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="flex flex-col gap-4">
+          <AuthInput
+            id="email"
+            type="email"
+            label="Email"
+            icon={Mail}
+            required
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
           <AuthInput
             id="username"
             type="text"

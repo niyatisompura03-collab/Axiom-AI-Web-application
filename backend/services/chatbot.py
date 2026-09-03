@@ -7,7 +7,9 @@ from backend.core.database import (
     save_message,
     create_conversation,
     rename_conversation,
-    get_user_settings
+    get_user_settings,
+    get_document,
+    update_conversation_active_document
 )
 
 from backend.core.memory import (
@@ -76,7 +78,7 @@ def generate_conversation_title(user_input: str) -> str:
 # Chat Loop
 # -----------------------
 
-def chat(user_id: str, conversation_id: str, message: str, timezone: str = None):
+def chat(user_id: str, conversation_id: str, message: str, timezone: str = None, document_id: str = None):
 
     user_input = message
 
@@ -96,12 +98,35 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None)
         )
         conversation_id = conversation["_id"]
 
+    # Document Resolution
+    active_document_id = document_id or (conversation.get("active_document_id") if conversation else None)
+    
+    if document_id and conversation:
+        update_conversation_active_document(conversation_id, document_id, user_id)
+        active_document_id = document_id
+        
+    doc = None
+    if active_document_id:
+        doc = get_document(active_document_id, user_id=user_id)
+
+    user_document = None
+    if document_id and doc:
+        user_document = {
+            "document_id": str(doc["document_id"]),
+            "filename": doc["filename"],
+            "type": doc["type"],
+            "mime_type": doc.get("mime_type", "")
+            # NOTE: do NOT store base64 content here — it's fetched from
+            # the documents collection at inference time via active_document_id.
+        }
+
     # Append user message to conversation_id
     save_message(
         conversation_id,
         "user",
         user_input,
-        user_id=user_id
+        user_id=user_id,
+        document=user_document
     )
 
     # Get updated conversation history
@@ -375,22 +400,51 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None)
         )
 
     # -----------------------
+    # -----------------------
+    # Document Context
+    # -----------------------
+    # doc is already resolved above
+        
+    model_name = "openai/gpt-oss-120b"
+    
+    if doc:
+        if doc["type"] == "text":
+            prompt_messages.append({
+                "role": "system",
+                "content": f"ACTIVE DOCUMENT CONTEXT:\nFilename: {doc.get('filename')}\nContent:\n{doc.get('content')}\n\nUse this document to answer the user's questions. If the user asks a question not covered by the document, clearly state that."
+            })
+        elif doc["type"] == "image":
+            model_name = "qwen/qwen3.6-27b"
+            for i in range(len(prompt_messages)-1, -1, -1):
+                if prompt_messages[i]["role"] == "user":
+                    original_text = prompt_messages[i]["content"]
+                    prompt_messages[i]["content"] = [
+                        {"type": "text", "text": original_text},
+                        {"type": "image_url", "image_url": {"url": f"data:{doc['mime_type']};base64,{doc['content']}"}}
+                    ]
+                    break
+
+    # -----------------------
     # Ask Groq
     # -----------------------
 
-    response = client.chat.completions.create(
+    completion_kwargs = {
+        "model": model_name,
+        "temperature": 0.7,
+        "max_tokens": 700,
+        "messages": prompt_messages
+    }
+    
+    if model_name == "qwen/qwen3.6-27b":
+        completion_kwargs["extra_body"] = {"reasoning_format": "hidden"}
 
-        model="openai/gpt-oss-120b",
-
-        temperature=0.7,
-
-        max_tokens=700,
-
-        messages=prompt_messages
-
-    )
+    response = client.chat.completions.create(**completion_kwargs)
 
     ai_reply = response.choices[0].message.content
+    
+    # Guard against None content (can happen on token overflow or model error)
+    if not ai_reply:
+        ai_reply = "I'm sorry, I wasn't able to generate a response. Please try again."
 
     # Save assistant reply
     save_message(

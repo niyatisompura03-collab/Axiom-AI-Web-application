@@ -1,13 +1,13 @@
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-export async function registerUser(username: string, password: string) {
+export async function registerUser(username: string, password: string, email?: string) {
   const response = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, email }),
   });
   
   if (!response.ok) {
@@ -64,6 +64,40 @@ export async function updateUser(token: string, data: { username: string; avatar
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
     throw new Error(errorData?.detail || `Failed to update user with status ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+export async function forgotPassword(email: string) {
+  const response = await fetch(`${API_URL}/auth/forgot-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || `Forgot password failed with status ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+export async function resetPassword(token: string, new_password: string) {
+  const response = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token, new_password }),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || `Reset password failed with status ${response.status}`);
   }
   
   return response.json();

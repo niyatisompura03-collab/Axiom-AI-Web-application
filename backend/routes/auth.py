@@ -1,9 +1,11 @@
 import os
+import re
 import secrets
 import urllib.parse
 import urllib.request
 import urllib.error
 import json
+import logging
 from fastapi import APIRouter, HTTPException, status, Request, Cookie
 from fastapi.responses import RedirectResponse
 from backend.core.database import (
@@ -19,6 +21,12 @@ from backend.core.security import (
     verify_password,
     hash_password,
 )
+from backend.core.password_reset import (
+    verify_reset_token,
+    consume_reset_token,
+    generate_reset_token
+)
+from backend.services.email import send_password_reset_email
 from fastapi import Depends
 from pydantic import BaseModel
 from typing import Optional
@@ -28,11 +36,19 @@ from google.auth.transport import requests as google_requests
 class AuthRequest(BaseModel):
     username: str
     password: str
+    email: Optional[str] = None
 
 class ProfileUpdateRequest(BaseModel):
     username: str
     avatar: Optional[str] = None
     dob: Optional[str] = None
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
 
 router = APIRouter(
     prefix="/auth",
@@ -58,23 +74,26 @@ def register(request: AuthRequest):
             detail="Username already exists"
         )
 
+    normalized_email = request.email.strip().lower() if request.email else None
+    if normalized_email:
+        if users_collection.find_one({"email": {"$regex": f"^{re.escape(normalized_email)}$", "$options": "i"}}):
+            raise HTTPException(
+                status_code=400,
+                detail="Email already registered"
+            )
 
     hashed_password = hash_password(
         password
     )
 
-
     user = {
-
         "username": username,
-
+        "email": normalized_email,
         "password_hash": hashed_password,
-
         "created_at": datetime.now(
             timezone.utc
         )
     }
-
 
     users_collection.insert_one(user)
 
@@ -188,11 +207,14 @@ def google_callback(
         
     google_id = id_info.get("sub")
     email = id_info.get("email")
+    if email:
+        email = email.strip().lower()
     name = id_info.get("name")
     
-    user = users_collection.find_one({
-        "$or": [{"google_id": google_id}, {"email": email}]
-    })
+    query = {"google_id": google_id} if not email else {
+        "$or": [{"google_id": google_id}, {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}]
+    }
+    user = users_collection.find_one(query)
     
     if user:
         # Link account if email matches but google_id is missing
@@ -286,6 +308,76 @@ def login(username: str, password: str):
         "access_token": token,
         "token_type": "bearer"
     }
+
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest):
+    email = request.email.strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+        
+    user = users_collection.find_one({"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}})
+    
+    generic_message = "If an account with that email exists and is eligible for password reset, we have sent a reset link."
+    
+    if not user:
+        return {"message": generic_message}
+        
+    if user.get("password_hash") is None:
+        return {"message": generic_message}
+        
+    token = generate_reset_token(user["username"])
+    
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    email_sent = send_password_reset_email(email, token, frontend_url)
+    
+    if not email_sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to send password reset email. Please try again later."
+        )
+    
+    return {"message": generic_message}
+
+@router.post("/reset-password")
+def reset_password(request: ResetPasswordRequest):
+    token_doc = verify_reset_token(request.token)
+    if not token_doc:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired reset token"
+        )
+        
+    username = token_doc["username"]
+    
+    user = users_collection.find_one({"username": username})
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+        
+    if user.get("password_hash") is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot reset password for Google-authenticated users"
+        )
+        
+    if not request.new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="Password cannot be empty"
+        )
+        
+    new_hashed_password = hash_password(request.new_password)
+    
+    users_collection.update_one(
+        {"username": username},
+        {"$set": {"password_hash": new_hashed_password}}
+    )
+    
+    consume_reset_token(request.token)
+    
+    return {"message": "Password has been successfully reset"}
 
 @router.get("/me")
 def get_me(username: str = Depends(get_current_username)):
