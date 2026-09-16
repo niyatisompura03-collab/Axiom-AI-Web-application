@@ -1,10 +1,12 @@
 import os
+import logging
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, status
 from backend.core.security import get_current_username
 from backend.core.document_processor import process_document, SUPPORTED_EXTENSIONS, get_extension
 from backend.core.database import save_document
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", 10))
 MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
@@ -52,10 +54,14 @@ async def upload_document(
         )
         
         # Log observability data
-        print(f"[Document Agent] upload received: {doc['document_id']}")
-        print(f"[Document Agent] file type detected: {ext} ({doc['mime_type']})")
-        print(f"[Document Agent] processing strategy selected: {doc['type']}")
-        print(f"[Document Agent] processing completed, size: {len(content_bytes)} bytes")
+        logger.info(
+            "[Document Agent] upload processed: document_id=%s extension=%s mime_type=%s strategy=%s size_bytes=%s",
+            doc["document_id"],
+            ext,
+            doc["mime_type"],
+            doc["type"],
+            len(content_bytes),
+        )
         
         return {
             "document_id": doc["document_id"],
@@ -64,6 +70,21 @@ async def upload_document(
         }
         
     except ValueError as e:
+        logger.warning(
+            "[Document Agent] upload rejected: filename=%s extension=%s reason=%s",
+            file.filename,
+            ext,
+            str(e),
+        )
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process document")
+        logger.exception(
+            "[Document Agent] upload processing failed: filename=%s extension=%s exception_type=%s",
+            file.filename,
+            ext,
+            type(e).__name__,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document could not be processed. Verify that the file is valid and try again.",
+        )

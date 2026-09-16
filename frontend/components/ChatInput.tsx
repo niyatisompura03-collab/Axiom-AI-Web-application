@@ -118,7 +118,7 @@ export default function ChatInput({
           ref={fileInputRef}
           className="hidden"
           onChange={handleFileUpload}
-          accept=".pdf,.doc,.docx,.txt,.md,.html,.csv,.json,.png,.jpg,.jpeg,.webp"
+          accept=".pdf,.docx,.txt,.md,.html,.csv,.json,.png,.jpg,.jpeg,.webp"
         />
 
         <textarea
