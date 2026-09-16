@@ -1,6 +1,8 @@
 from groq import Groq
 from dotenv import load_dotenv
 import os
+import base64
+import logging
 
 from backend.core.database import (
     get_conversation,
@@ -27,12 +29,194 @@ from backend.agents.datetime_tool import (
 )
 from backend.agents.web_search import search_web
 from backend.core.axiom_personality import AXIOM_PERSONALITY
+from backend.core.document_processor import validate_image_content
 
 load_dotenv()
 
 client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
+
+logger = logging.getLogger(__name__)
+
+QWEN_IMAGE_MODEL = "qwen/qwen3.6-27b"
+QWEN_MAX_COMPLETION_TOKENS = 700
+IMAGE_UPSTREAM_ERROR_REPLY = (
+    "I'm sorry, I couldn't analyze that image right now. Please try again."
+)
+IMAGE_EMPTY_RESPONSE_REPLY = (
+    "I'm sorry, I couldn't generate an answer from that image. Please try again."
+)
+IMAGE_LENGTH_RESPONSE_REPLY = (
+    "I'm sorry, the image response was cut off before it could be completed. Please try again with a more specific question."
+)
+IMAGE_INVALID_DOCUMENT_REPLY = (
+    "I'm sorry, that image document could not be read. Please upload it again."
+)
+IMAGE_CONVERSATION_CONTINUITY_INSTRUCTION = (
+    "This is the same active image document discussed in the prior conversation. "
+    "Use the attached image together with the earlier messages to answer the follow-up. "
+    "Carefully read visible text, screenshots, and tables in the image when they are relevant. "
+    "Keep facts about the image consistent with prior answers unless the image provides "
+    "clear contrary evidence; if correcting an earlier answer, explicitly explain why."
+)
+TEXT_DOCUMENT_GROUNDING_INSTRUCTION = (
+    "The active document below is the source of truth for questions about it. "
+    "Ground answers, calculations, filtering, and comparisons in its actual content. "
+    "Do not invent values, rows, or facts; if the requested information is absent, say so clearly."
+)
+
+
+def _image_document_data_url(doc: dict) -> str:
+    """Revalidate stored image content and build a canonical data URL.
+
+    Revalidation also protects legacy records uploaded before MIME/signature
+    validation was introduced.
+    """
+    try:
+        raw_content = base64.b64decode(doc.get("content", ""), validate=True)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Stored image content is not valid base64") from exc
+    mime_type = validate_image_content(doc.get("filename", ""), raw_content)
+    return f"data:{mime_type};base64,{doc['content']}"
+
+
+def _attach_image_to_latest_user_message(prompt_messages: list[dict], data_url: str) -> None:
+    for index in range(len(prompt_messages) - 1, -1, -1):
+        if prompt_messages[index]["role"] == "user":
+            original_text = prompt_messages[index]["content"]
+            prompt_messages[index]["content"] = [
+                {
+                    "type": "text",
+                    "text": f"{original_text}\n\n{IMAGE_CONVERSATION_CONTINUITY_INSTRUCTION}",
+                },
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ]
+            return
+    raise ValueError("Image request has no user message")
+
+
+def _usage_summary(usage) -> dict:
+    if usage is None:
+        return {}
+    return {
+        name: getattr(usage, name, None)
+        for name in ("prompt_tokens", "completion_tokens", "total_tokens")
+        if getattr(usage, name, None) is not None
+    }
+
+
+def _qwen_image_completion(prompt_messages: list[dict]) -> str:
+    """Call Qwen for an image turn and safely classify non-answer outcomes."""
+    try:
+        response = client.chat.completions.create(
+            model=QWEN_IMAGE_MODEL,
+            temperature=0.7,
+            max_completion_tokens=QWEN_MAX_COMPLETION_TOKENS,
+            reasoning_effort="none",
+            reasoning_format="hidden",
+            messages=prompt_messages,
+        )
+    except Exception as exc:
+        logger.error(
+            "[Document Agent] Qwen image request failed: exception_type=%s",
+            type(exc).__name__,
+        )
+        return IMAGE_UPSTREAM_ERROR_REPLY
+
+    choices = getattr(response, "choices", None) or []
+    usage = _usage_summary(getattr(response, "usage", None))
+    if not choices:
+        logger.warning(
+            "[Document Agent] Qwen image response had no choices: usage=%s",
+            usage,
+        )
+        return IMAGE_EMPTY_RESPONSE_REPLY
+
+    choice = choices[0]
+    response_message = getattr(choice, "message", None)
+    finish_reason = getattr(choice, "finish_reason", None)
+    content = getattr(response_message, "content", None) if response_message else None
+    refusal = getattr(response_message, "refusal", None) if response_message else None
+    reasoning = getattr(response_message, "reasoning", None) if response_message else None
+    logger.info(
+        "[Document Agent] Qwen image response: finish_reason=%s content_length=%s refusal=%s reasoning_present=%s usage=%s",
+        finish_reason,
+        len(content) if isinstance(content, str) else None,
+        bool(refusal),
+        bool(reasoning),
+        usage,
+    )
+
+    if isinstance(content, str) and content.strip():
+        return content.strip()
+    if finish_reason == "length":
+        return IMAGE_LENGTH_RESPONSE_REPLY
+    if refusal:
+        return IMAGE_UPSTREAM_ERROR_REPLY
+    return IMAGE_EMPTY_RESPONSE_REPLY
+
+
+def _memory_enrichment(user_id: str, user_input: str, memory_enabled: bool, is_image_document: bool) -> list:
+    """Return optional memories, isolating non-critical failures for image Q&A."""
+    if not memory_enabled:
+        return []
+
+    def enrich() -> list:
+        memory = extract_memory(user_input)
+        if memory.get("memory"):
+            save_memory(user_id, memory)
+
+        memory_category = classify_memory_query(user_input)
+        if memory_category == "none":
+            return []
+        return search_memories(user_id, user_input, memory_category)
+
+    if not is_image_document:
+        return enrich()
+    try:
+        return enrich()
+    except Exception as exc:
+        logger.warning(
+            "[Document Agent] optional memory enrichment skipped for image chat: exception_type=%s",
+            type(exc).__name__,
+        )
+        return []
+
+
+def _is_document_relevant(raw_messages: list) -> bool:
+    if len(raw_messages) <= 1:
+        return True
+    
+    history = []
+    for m in raw_messages[-4:]:
+        content = m["content"]
+        if isinstance(content, list):
+            text_parts = [p["text"] for p in content if p.get("type") == "text"]
+            content = " ".join(text_parts)
+        history.append({"role": m["role"], "content": str(content)})
+
+    try:
+        response = client.chat.completions.create(
+            model="groq/compound-mini",
+            temperature=0.0,
+            max_tokens=10,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an AI assistant analyzing a conversation with an uploaded document/image.\n"
+                        "Based on the conversation history, does the user's LATEST message refer to, "
+                        "follow up on, or implicitly require the uploaded document/image to be answered?\n"
+                        "Answer ONLY 'yes' or 'no'."
+                    )
+                },
+                *history
+            ]
+        )
+        return "yes" in response.choices[0].message.content.strip().lower()
+    except Exception:
+        return True
 
 
 def generate_conversation_title(user_input: str) -> str:
@@ -106,8 +290,8 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
         active_document_id = document_id
         
     doc = None
-    if active_document_id:
-        doc = get_document(active_document_id, user_id=user_id)
+    if document_id:
+        doc = get_document(document_id, user_id=user_id)
 
     user_document = None
     if document_id and doc:
@@ -199,47 +383,16 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
         f"- Markdown: {'enabled' if markdown_enabled else 'disabled'}"
     )
 
-    # -----------------------
-    # Store Memory
-    # -----------------------
-
-    if memory_enabled:
-
-        memory = extract_memory(
-            user_input
-        )
-
-        if memory.get("memory"):
-            save_memory(
-                user_id,
-                memory
-            )
-
-    # -----------------------
-    # Retrieve Memories
-    # -----------------------
-
-    if not memory_enabled:
-
-        memories = []
-
-    else:
-
-        memory_category = classify_memory_query(
-            user_input
-        )
-
-        if memory_category == "none":
-
-            memories = []
-
-        else:
-
-            memories = search_memories(
-                user_id,
-                user_input,
-                memory_category
-            )
+    # Memory enrichment remains unchanged for ordinary chat. For an image
+    # turn it is optional context, so its failures must not prevent Qwen from
+    # answering the image question.
+    is_image_document = bool(doc and doc.get("type") == "image")
+    memories = _memory_enrichment(
+        user_id,
+        user_input,
+        memory_enabled,
+        is_image_document,
+    )
 
     memory_text = ""
 
@@ -369,10 +522,58 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
             )
 
     elif tool == "search":
+        from urllib.parse import urlparse
 
-        tool_result = search_web(
-            user_input
-        )
+        raw_search = search_web(user_input)
+
+        if raw_search.get("error"):
+            tool_result = f"Search Error: {raw_search['error']}"
+        else:
+            results = raw_search.get("results", [])
+            # Sort results by date descending (newest first, None last)
+            def get_date(r):
+                d = r.get("published_date")
+                return d if d else ""
+            results.sort(key=get_date, reverse=True)
+
+            formatted_results = []
+            official_domains = ["python.org", "nextjs.org", "vercel.com", "mongodb.com", "oracle.com", "reactjs.org", "nodejs.org", "docker.com", "github.com", "microsoft.com", "apple.com"]
+            community_domains = ["reddit.com", "stackoverflow.com", "news.ycombinator.com", "twitter.com", "x.com", "youtube.com"]
+
+            for idx, r in enumerate(results, 1):
+                url = r.get("url", "")
+                try:
+                    domain = urlparse(url).netloc.lower()
+                    if domain.startswith("www."):
+                        domain = domain[4:]
+                except:
+                    domain = "unknown"
+
+                source_type = "Secondary/General"
+                if any(domain.endswith(d) or domain == d for d in official_domains):
+                    source_type = "Official/Primary"
+                elif any(domain.endswith(d) or domain == d for d in community_domains):
+                    source_type = "Community/Social"
+                elif "wikipedia.org" in domain:
+                    source_type = "Secondary/Reference"
+
+                score = r.get("score", "N/A")
+                date_val = r.get("published_date") or "Unknown"
+                title = r.get("title", "")
+                snippet = r.get("content", "")
+
+                res_str = (
+                    f"[RESULT {idx}]\n"
+                    f"Score: {score}\n"
+                    f"Date: {date_val}\n"
+                    f"Domain: {domain} ({source_type})\n"
+                    f"Title: {title}\n"
+                    f"URL: {url}\n"
+                    f"Snippet: {snippet}\n"
+                )
+                formatted_results.append(res_str)
+
+            tool_result = "\n".join(formatted_results)
 
     if tool_result:
 
@@ -388,8 +589,19 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
                 Rules:
                 - Do not mention tools.
                 - Do not say "according to tool".
-                - Do not recalculate.
+                - Do not recalculate (unless calculating a relative date/time based on the tool's provided current datetime).
                 - Keep the response conversational.
+                - For date/time, treat the tool's result as the absolute truth and never guess timezones from context.
+                - For web search:
+                  1. Cite only URLs that exist in the provided search results.
+                  2. Never invent or reconstruct a URL.
+                  3. Use the source whose content most directly supports the claim.
+                  4. You MUST prioritize sources labeled (Official/Primary) over (Secondary/Reference) or (Community/Social) when they contain the required information. Do not cite Wikipedia or Reddit if an Official source is available for the same claim.
+                  5. Do not cite a source merely because it contains the same keyword.
+                  6. Do not use one source for unrelated claims when more appropriate sources are available.
+                  7. For "latest", "newest", "this week", or "most recent" questions, use the actual available publication/release dates.
+                  8. If the search results do not provide enough evidence, say so rather than guessing.
+                  9. Preserve the actual title and URL returned by the search tool: [Title](URL).
 
                 Tool result:
 
@@ -406,45 +618,63 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
     # doc is already resolved above
         
     model_name = "openai/gpt-oss-120b"
+    image_data_url = None
     
-    if doc:
-        if doc["type"] == "text":
-            prompt_messages.append({
-                "role": "system",
-                "content": f"ACTIVE DOCUMENT CONTEXT:\nFilename: {doc.get('filename')}\nContent:\n{doc.get('content')}\n\nUse this document to answer the user's questions. If the user asks a question not covered by the document, clearly state that."
-            })
-        elif doc["type"] == "image":
-            model_name = "qwen/qwen3.6-27b"
-            for i in range(len(prompt_messages)-1, -1, -1):
-                if prompt_messages[i]["role"] == "user":
-                    original_text = prompt_messages[i]["content"]
-                    prompt_messages[i]["content"] = [
-                        {"type": "text", "text": original_text},
-                        {"type": "image_url", "image_url": {"url": f"data:{doc['mime_type']};base64,{doc['content']}"}}
-                    ]
-                    break
+    if active_document_id:
+        is_relevant = True
+        if not document_id:
+            is_relevant = _is_document_relevant(raw_messages)
+            
+        if is_relevant:
+            if not doc:
+                doc = get_document(active_document_id, user_id=user_id)
+            if doc:
+                if doc["type"] == "text":
+                    prompt_messages.append({
+                        "role": "system",
+                        "content": (
+                            f"ACTIVE DOCUMENT CONTEXT:\nFilename: {doc.get('filename')}\n"
+                            f"{TEXT_DOCUMENT_GROUNDING_INSTRUCTION}\n\n"
+                            f"Content:\n{doc.get('content')}"
+                        )
+                    })
+                elif doc["type"] == "image":
+                    model_name = QWEN_IMAGE_MODEL
+                    try:
+                        image_data_url = _image_document_data_url(doc)
+                        _attach_image_to_latest_user_message(prompt_messages, image_data_url)
+                    except ValueError as exc:
+                        logger.warning(
+                            "[Document Agent] stored image validation failed: document_id=%s exception_type=%s",
+                            doc.get("document_id"),
+                            type(exc).__name__,
+                        )
+        else:
+            doc = None
 
     # -----------------------
     # Ask Groq
     # -----------------------
 
-    completion_kwargs = {
-        "model": model_name,
-        "temperature": 0.7,
-        "max_tokens": 700,
-        "messages": prompt_messages
-    }
-    
-    if model_name == "qwen/qwen3.6-27b":
-        completion_kwargs["extra_body"] = {"reasoning_format": "hidden"}
+    if model_name == QWEN_IMAGE_MODEL:
+        ai_reply = (
+            _qwen_image_completion(prompt_messages)
+            if image_data_url
+            else IMAGE_INVALID_DOCUMENT_REPLY
+        )
+    else:
+        completion_kwargs = {
+            "model": model_name,
+            "temperature": 0.7,
+            "max_tokens": 700,
+            "messages": prompt_messages
+        }
+        response = client.chat.completions.create(**completion_kwargs)
+        ai_reply = response.choices[0].message.content
 
-    response = client.chat.completions.create(**completion_kwargs)
-
-    ai_reply = response.choices[0].message.content
-    
-    # Guard against None content (can happen on token overflow or model error)
-    if not ai_reply:
-        ai_reply = "I'm sorry, I wasn't able to generate a response. Please try again."
+        # Preserve existing non-image behavior.
+        if not ai_reply:
+            ai_reply = "I'm sorry, I wasn't able to generate a response. Please try again."
 
     # Save assistant reply
     save_message(

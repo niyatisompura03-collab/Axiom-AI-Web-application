@@ -20,7 +20,10 @@ def get_current_time(timezone_str=None):
     return {
         "tool": "datetime",
         "type": "current_time",
-        "value": now.strftime("%I:%M %p")
+        "current_time": now.strftime("%I:%M %p %Z"),
+        "current_date": now.strftime("%A, %B %d, %Y"),
+        "timezone": str(tz),
+        "instruction": "This datetime and timezone are authoritative. Do not infer timezone from context. Recalculate any relative dates from this current_date."
     }
 
 
@@ -28,12 +31,15 @@ def get_current_time(timezone_str=None):
 def get_current_date(timezone_str=None):
 
     tz = _get_tz(timezone_str)
-    today = datetime.now(tz)
+    now = datetime.now(tz)
 
     return {
         "tool": "datetime",
         "type": "current_date",
-        "value": today.strftime("%A, %d %B %Y")
+        "current_time": now.strftime("%I:%M %p %Z"),
+        "current_date": now.strftime("%A, %B %d, %Y"),
+        "timezone": str(tz),
+        "instruction": "This datetime and timezone are authoritative. Do not infer timezone from context. Recalculate any relative dates from this current_date."
     }
 
 
@@ -41,11 +47,16 @@ def get_current_date(timezone_str=None):
 def get_relative_date(days, timezone_str=None):
 
     tz = _get_tz(timezone_str)
-    date = datetime.now(tz) + timedelta(days=days)
+    now = datetime.now(tz)
+    target = now + timedelta(days=days)
 
     return {
         "tool": "datetime",
         "type": "relative_date",
         "days_offset": days,
-        "value": date.strftime("%A, %d %B %Y")
+        "target_date_calculated": target.strftime("%A, %B %d, %Y"),
+        "current_time": now.strftime("%I:%M %p %Z"),
+        "current_date": now.strftime("%A, %B %d, %Y"),
+        "timezone": str(tz),
+        "instruction": "This datetime and timezone are authoritative. Do not infer timezone from context. Recalculate any relative dates from this current_date."
     }

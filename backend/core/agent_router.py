@@ -55,7 +55,8 @@ def detect_tool(user_message):
         "what time is it",
         "tell me the time",
         "can you tell me the time",
-        "do you know the time"
+        "do you know the time",
+        "timezone"
     ]
 
 
@@ -71,7 +72,6 @@ def detect_tool(user_message):
     # -----------------
 
     date_keywords = [
-
         "today",
         "today's date",
         "current date",
@@ -79,8 +79,18 @@ def detect_tool(user_message):
         "what day",
         "tomorrow",
         "yesterday",
-        "weekday"
-
+        "weekday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+        "next",
+        "last",
+        "month",
+        "year"
     ]
 
 
@@ -96,15 +106,25 @@ def detect_tool(user_message):
     # -----------------
 
     search_keywords = [
-
         "search",
         "search for",
         "latest",
         "news",
         "look up",
         "find information",
-        "who is"
-
+        "who is",
+        "current",
+        "new",
+        "recently",
+        "update",
+        "updates",
+        "version",
+        "this week",
+        "this month",
+        "this year",
+        "right now",
+        "happened",
+        "developments"
     ]
 
 
