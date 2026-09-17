@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 import base64
 import logging
+import json
 
 from backend.core.database import (
     get_conversation,
@@ -257,6 +258,45 @@ def generate_conversation_title(user_input: str) -> str:
         words = user_input.strip().split()
         return " ".join(words[:5]) if words else "New Chat"
 
+def reformulate_query(user_input: str, tool: str, raw_messages: list, doc: dict = None) -> str:
+    history = []
+    for m in raw_messages[-3:]:
+        content = m["content"]
+        if isinstance(content, list):
+            text_parts = [p["text"] for p in content if p.get("type") == "text"]
+            content = " ".join(text_parts)
+        history.append({"role": m["role"], "content": str(content)})
+
+    doc_context = f"\nActive Document: {doc['filename']}" if doc else ""
+
+    system_prompt = f"""You are a query reformulator for an AI assistant.
+Your ONLY job is to reformulate the user's conversational request into a clean query string optimized for the '{tool}' tool.
+
+Rules:
+1. For calculator: extract only the math expression.
+2. For search: create a concise search query. Resolve pronouns (it, that, this) using the conversation history. Preserve constraints like 'latest', 'official', 'news'.
+3. For date/time: preserve the intended relative date/time question.
+4. Output NOTHING EXCEPT the plain text query string. No JSON, no explanations, no formatting, no XML tags, no tool calls. Just the raw string to be passed to the tool.
+5. If you cannot confidently resolve a pronoun, leave it ambiguous. Do NOT invent missing context."""
+
+    prompt_content = f"Conversation History:\n{history}\n{doc_context}\nUser: {user_input}"
+    
+    try:
+        response = client.chat.completions.create(
+            model="groq/compound-mini",
+            temperature=0.0,
+            max_tokens=100,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt_content}
+            ]
+        )
+        query = response.choices[0].message.content.strip()
+        return query if query else user_input
+    except Exception as e:
+        logger.error(f"[Planner] Failed to reformulate query: {e}")
+        return user_input
+
 
 # -----------------------
 # Chat Loop
@@ -458,6 +498,21 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
         Avoid giant unreadable paragraphs.
         Make formatting contextual rather than rigid.
 
+        ==================================================
+
+        CAPABILITIES
+
+        You have access to tools including web search, calculator, and date/time.
+        When these tools are used, their results appear in the conversation.
+
+        If a previous response in this conversation was based on web search results,
+        the sources (titles, URLs, dates) are visible in the conversation history.
+        When the user asks about sources, refer to the actual sources cited in your
+        previous response. Do NOT claim you cannot browse the web or access the internet.
+        Do NOT invent sources that were not in your previous response.
+        If the exact source details are no longer visible in the conversation history,
+        say so honestly rather than fabricating them.
+
         """
 
     prompt_messages = [
@@ -480,15 +535,20 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
     )
 
     tool = detect_tool(
-        user_input
+        user_input,
+        context=raw_messages
     )
 
     tool_result = None
+    tool_query = user_input
+
+    if tool:
+        tool_query = reformulate_query(user_input, tool, raw_messages, doc=doc)
 
     if tool == "calculator":
 
         tool_result = calculate(
-            user_input
+            tool_query
         )
 
     elif tool == "time":
@@ -499,7 +559,7 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
 
     elif tool == "date":
 
-        message = user_input.lower()
+        message = tool_query.lower()
 
         if "tomorrow" in message:
 
@@ -524,7 +584,7 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
     elif tool == "search":
         from urllib.parse import urlparse
 
-        raw_search = search_web(user_input)
+        raw_search = search_web(tool_query)
 
         if raw_search.get("error"):
             tool_result = f"Search Error: {raw_search['error']}"
