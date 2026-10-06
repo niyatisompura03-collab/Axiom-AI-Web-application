@@ -1,6 +1,7 @@
 from groq import Groq
 from dotenv import load_dotenv
 import os
+import re
 import base64
 import logging
 import json
@@ -21,7 +22,7 @@ from backend.core.memory import (
 from backend.core.memory_extractor import extract_memory
 from backend.core.memory import save_memory
 from backend.core.memory_classifier import classify_memory_query
-from backend.core.agent_router import detect_tool
+from backend.core.agent_router import detect_tool, detect_tools
 from backend.agents.calculator import calculate
 from backend.agents.datetime_tool import (
     get_current_time,
@@ -31,6 +32,7 @@ from backend.agents.datetime_tool import (
 from backend.agents.web_search import search_web
 from backend.core.axiom_personality import AXIOM_PERSONALITY
 from backend.core.document_processor import validate_image_content
+from backend.core.verifier import verify_tool_result, reformulate_with_feedback
 
 load_dotenv()
 
@@ -258,6 +260,83 @@ def generate_conversation_title(user_input: str) -> str:
         words = user_input.strip().split()
         return " ".join(words[:5]) if words else "New Chat"
 
+def _extract_calculator_expression(text: str) -> str:
+    """
+    Deterministically extract an arithmetic expression from a compound query
+    when LLM reformulation fails.
+    """
+    if not text:
+        return text
+
+    # 1. Look for explicit calculation trigger words followed by a math expression
+    patterns = [
+        r'(?:calculate|compute|evaluate)\s+([0-9\.\s\+\-\*\/\(\)\%\^]+)',
+        r'(?:what\s+is|what\'s)\s+([0-9\.\s\+\-\*\/\(\)\%\^]+)',
+    ]
+    for p in patterns:
+        m = re.search(p, text, re.IGNORECASE)
+        if m:
+            expr = m.group(1).strip(" \t\n\r.?!,;")
+            if any(c.isdigit() for c in expr):
+                return expr
+
+    # 2. General arithmetic expression matching: numbers with math operators
+    math_pattern = r'\(?\s*-?\d+(?:\.\d+)?\s*\)?(?:\s*[\+\-\*\/\%\^]+\s*\(?\s*-?\d+(?:\.\d+)?\s*\)?)+'
+    m = re.search(math_pattern, text)
+    if m:
+        return m.group(0).strip(" \t\n\r.?!,;")
+
+    return text
+
+def _extract_search_query(text: str) -> str:
+    """
+    Deterministically extract the search-relevant clause from a compound query
+    when LLM reformulation fails. Strips out time/date/calculator sub-clauses.
+    """
+    if not text:
+        return text
+
+    # Non-search clauses: time/date/calculator intent markers
+    non_search_markers = [
+        "what time", "current time", "time right now", "tell me the time",
+        "what is the time", "whats the time", "what's the time",
+        "today's date", "todays date", "what date", "what day", "current date",
+        "tell me the date", "tell me today",
+        "calculate ", "compute ", "evaluate ",
+    ]
+
+    # Split the compound query into clauses on common conjunctions/separators
+    clauses = re.split(
+        r',\s*and\s+|\s+and\s+also\s+|\s+and\s+tell\s+me\s+|\s+and\s+',
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    if len(clauses) <= 1:
+        return text
+
+    # Find clauses that are NOT about other tools
+    search_clauses = []
+    for clause in clauses:
+        clause_lower = clause.lower().strip()
+        is_other_tool = False
+        for marker in non_search_markers:
+            if marker in clause_lower:
+                is_other_tool = True
+                break
+        # Also check for bare math expressions
+        if not is_other_tool and re.match(r'^[\d\s\+\-\*\/\%\^\(\)\.]+$', clause.strip()):
+            is_other_tool = True
+        if not is_other_tool and clause.strip():
+            search_clauses.append(clause.strip())
+
+    if search_clauses:
+        result = " ".join(search_clauses)
+        result = result.strip(" .,;!?")
+        return result
+
+    return text
+
 def reformulate_query(user_input: str, tool: str, raw_messages: list, doc: dict = None) -> str:
     history = []
     for m in raw_messages[-3:]:
@@ -292,11 +371,84 @@ Rules:
             ]
         )
         query = response.choices[0].message.content.strip()
-        return query if query else user_input
+        if query:
+            return query
+        if tool == "calculator":
+            return _extract_calculator_expression(user_input)
+        if tool == "search":
+            return _extract_search_query(user_input)
+        return user_input
     except Exception as e:
         logger.error(f"[Planner] Failed to reformulate query: {e}")
+        if tool == "calculator":
+            return _extract_calculator_expression(user_input)
+        if tool == "search":
+            return _extract_search_query(user_input)
         return user_input
 
+def _run_multitool_pipeline(user_input: str, tools: list[str], raw_messages: list, doc: dict, timezone: str):
+    results = []
+    
+    def _execute(t, q):
+        if t == "calculator":
+            return calculate(q)
+        elif t == "time":
+            return get_current_time(timezone)
+        elif t == "date":
+            msg = q.lower()
+            if "tomorrow" in msg:
+                return get_relative_date(1, timezone)
+            elif "yesterday" in msg:
+                return get_relative_date(-1, timezone)
+            else:
+                return get_current_date(timezone)
+        elif t == "search":
+            return search_web(q)
+        return None
+
+    for idx, tool in enumerate(tools[:2], 1):
+        logger.info(f"[Orchestrator] Step {idx}: Running tool: {tool}")
+        tool_query = reformulate_query(user_input, tool, raw_messages, doc=doc)
+        logger.info(f"[Orchestrator] Tool '{tool}' reformulated query: {tool_query}")
+        
+        raw_result = _execute(tool, tool_query)
+        verdict = verify_tool_result(user_input, tool, tool_query, raw_result, context=raw_messages, is_retry=False)
+        logger.info(f"[Orchestrator] Tool '{tool}' verification verdict: {verdict['status']}")
+        
+        tool_result = None
+        error = None
+        
+        if verdict["status"] == "retry":
+            logger.info(f"[Verifier] Retrying {tool} query. Feedback: {verdict['feedback']}")
+            retry_query = reformulate_with_feedback(user_input, tool, raw_messages, verdict["feedback"])
+            logger.info(f"[Orchestrator] Tool '{tool}' retry query: {retry_query}")
+            
+            raw_retry_result = _execute(tool, retry_query)
+            retry_verdict = verify_tool_result(user_input, tool, retry_query, raw_retry_result, context=raw_messages, is_retry=True)
+            logger.info(f"[Orchestrator] Tool '{tool}' retry verification verdict: {retry_verdict['status']}")
+            
+            if retry_verdict["status"] == "valid":
+                tool_result = retry_verdict["clean_result"]
+                status = "valid"
+            else:
+                status = "failed"
+                error = "Reliable tool evidence was unavailable after retry."
+        elif verdict["status"] == "valid":
+            tool_result = verdict["clean_result"]
+            status = "valid"
+        else:
+            status = "failed"
+            error = "Reliable tool evidence was unavailable."
+            
+        logger.info(f"[Orchestrator] Tool '{tool}' final status: {status}")
+        results.append({
+            "tool": tool.upper(),
+            "status": status,
+            "result": tool_result,
+            "error": error
+        })
+        
+    return results
 
 # -----------------------
 # Chat Loop
@@ -502,8 +654,10 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
 
         CAPABILITIES
 
-        You have access to tools including web search, calculator, and date/time.
-        When these tools are used, their results appear in the conversation.
+        CRITICAL INSTRUCTION: DO NOT ATTEMPT TO CALL ANY TOOLS (e.g. web.run, search).
+        You DO NOT have access to trigger tools yourself. 
+        The system executes all required tools BEFORE you generate your response, and injects the results as text below. 
+        Your ONLY job is to synthesize a natural language response using the provided text.
 
         If a previous response in this conversation was based on web search results,
         the sources (titles, URLs, dates) are visible in the conversation history.
@@ -534,108 +688,188 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
         formatted_history
     )
 
-    tool = detect_tool(
+    tools = detect_tools(
         user_input,
         context=raw_messages
     )
 
-    tool_result = None
-    tool_query = user_input
+    formatted_tool_result = None
+    all_failed = False
 
-    if tool:
-        tool_query = reformulate_query(user_input, tool, raw_messages, doc=doc)
+    if tools:
+        logger.info(f"[Orchestrator] Original user input: '{user_input}'")
+        logger.info(f"[Orchestrator] Detected tools: {tools}")
+        if len(tools) == 1:
+            tool = tools[0]
+            tool_query = reformulate_query(user_input, tool, raw_messages, doc=doc)
+    
+            def _execute(t, q):
+                if t == "calculator":
+                    return calculate(q)
+                elif t == "time":
+                    return get_current_time(timezone)
+                elif t == "date":
+                    msg = q.lower()
+                    if "tomorrow" in msg:
+                        return get_relative_date(1, timezone)
+                    elif "yesterday" in msg:
+                        return get_relative_date(-1, timezone)
+                    else:
+                        return get_current_date(timezone)
+                elif t == "search":
+                    return search_web(q)
+                return None
+    
+            raw_result = _execute(tool, tool_query)
+            verdict = verify_tool_result(user_input, tool, tool_query, raw_result, context=raw_messages, is_retry=False)
+    
+            if verdict["status"] == "retry":
+                logger.info(f"[Verifier] Retrying {tool} query. Feedback: {verdict['feedback']}")
+                retry_query = reformulate_with_feedback(user_input, tool, raw_messages, verdict["feedback"])
+                
+                raw_retry_result = _execute(tool, retry_query)
+                retry_verdict = verify_tool_result(user_input, tool, retry_query, raw_retry_result, context=raw_messages, is_retry=True)
+                
+                if retry_verdict["status"] == "valid":
+                    tool_result = retry_verdict["clean_result"]
+                else:
+                    tool_result = {"error": "Reliable tool evidence was unavailable after retry."}
+            elif verdict["status"] == "valid":
+                tool_result = verdict["clean_result"]
+            else:
+                tool_result = {"error": "Reliable tool evidence was unavailable."}
+    
+            if tool == "search":
+                from urllib.parse import urlparse
+    
+                if tool_result and tool_result.get("error"):
+                    formatted_tool_result = f"Search Error: {tool_result['error']}\n\nCRITICAL INSTRUCTION: Because the required tool evidence could not be verified, you MUST NOT answer the user's question using your internal training data. You MUST clearly state that reliable current evidence could not be found to answer the query. Do not invent or guess the answer."
+                    all_failed = True
+                elif tool_result:
+                    results = tool_result.get("results", [])
+                    def get_date(r):
+                        d = r.get("published_date")
+                        return d if d else ""
+                    results.sort(key=get_date, reverse=True)
+    
+                    formatted_results = []
+                    official_domains = ["python.org", "nextjs.org", "vercel.com", "mongodb.com", "oracle.com", "reactjs.org", "nodejs.org", "docker.com", "github.com", "microsoft.com", "apple.com"]
+                    community_domains = ["reddit.com", "stackoverflow.com", "news.ycombinator.com", "twitter.com", "x.com", "youtube.com"]
+    
+                    for idx, r in enumerate(results, 1):
+                        url = r.get("url", "")
+                        try:
+                            domain = urlparse(url).netloc.lower()
+                            if domain.startswith("www."):
+                                domain = domain[4:]
+                        except:
+                            domain = "unknown"
+    
+                        source_type = "Secondary/General"
+                        if any(domain.endswith(d) or domain == d for d in official_domains):
+                            source_type = "Official/Primary"
+                        elif any(domain.endswith(d) or domain == d for d in community_domains):
+                            source_type = "Community/Social"
+                        elif "wikipedia.org" in domain:
+                            source_type = "Secondary/Reference"
+    
+                        score = r.get("score", "N/A")
+                        date_val = r.get("published_date") or "Unknown"
+                        title = r.get("title", "")
+                        snippet = r.get("content", "")
+    
+                        res_str = (
+                            f"[RESULT {idx}]\n"
+                            f"Score: {score}\n"
+                            f"Date: {date_val}\n"
+                            f"Domain: {domain} ({source_type})\n"
+                            f"Title: {title}\n"
+                            f"URL: {url}\n"
+                            f"Snippet: {snippet}\n"
+                        )
+                        formatted_results.append(res_str)
+    
+                    formatted_tool_result = "\n".join(formatted_results)
+            else:
+                if isinstance(tool_result, dict) and tool_result.get("error"):
+                    formatted_tool_result = f"Tool Error: {tool_result['error']}\n\nCRITICAL INSTRUCTION: Because the required tool evidence could not be verified, you MUST NOT answer the user's question using your internal training data. You MUST clearly state that reliable current evidence could not be found to answer the query. Do not invent or guess the answer."
+                    all_failed = True
+                else:
+                    formatted_tool_result = str(tool_result)
+        
+        elif len(tools) == 2:
+            from urllib.parse import urlparse
+            multi_results = _run_multitool_pipeline(user_input, tools, raw_messages, doc, timezone)
+            
+            formatted_parts = []
+            all_failed_check = True
+            
+            for res in multi_results:
+                part = f"[TOOL {res['tool']}]\nStatus: {res['status']}\n"
+                
+                if res['status'] == 'failed':
+                    part += f"Error:\n{res['error']}\n"
+                else:
+                    all_failed_check = False
+                    if res['tool'] == 'SEARCH' and isinstance(res['result'], dict):
+                        results_list = res['result'].get("results", [])
+                        def get_date(r):
+                            d = r.get("published_date")
+                            return d if d else ""
+                        results_list.sort(key=get_date, reverse=True)
 
-    if tool == "calculator":
+                        formatted_results = []
+                        official_domains = ["python.org", "nextjs.org", "vercel.com", "mongodb.com", "oracle.com", "reactjs.org", "nodejs.org", "docker.com", "github.com", "microsoft.com", "apple.com"]
+                        community_domains = ["reddit.com", "stackoverflow.com", "news.ycombinator.com", "twitter.com", "x.com", "youtube.com"]
 
-        tool_result = calculate(
-            tool_query
-        )
+                        for idx, r in enumerate(results_list, 1):
+                            url = r.get("url", "")
+                            try:
+                                domain = urlparse(url).netloc.lower()
+                                if domain.startswith("www."):
+                                    domain = domain[4:]
+                            except:
+                                domain = "unknown"
 
-    elif tool == "time":
+                            source_type = "Secondary/General"
+                            if any(domain.endswith(d) or domain == d for d in official_domains):
+                                source_type = "Official/Primary"
+                            elif any(domain.endswith(d) or domain == d for d in community_domains):
+                                source_type = "Community/Social"
+                            elif "wikipedia.org" in domain:
+                                source_type = "Secondary/Reference"
 
-        tool_result = get_current_time(
-            timezone
-        )
+                            score = r.get("score", "N/A")
+                            date_val = r.get("published_date") or "Unknown"
+                            title = r.get("title", "")
+                            snippet = r.get("content", "")
 
-    elif tool == "date":
+                            res_str = (
+                                f"[RESULT {idx}]\n"
+                                f"Score: {score}\n"
+                                f"Date: {date_val}\n"
+                                f"Domain: {domain} ({source_type})\n"
+                                f"Title: {title}\n"
+                                f"URL: {url}\n"
+                                f"Snippet: {snippet}\n"
+                            )
+                            formatted_results.append(res_str)
 
-        message = tool_query.lower()
+                        part += "Result:\n" + "\n".join(formatted_results) + "\n"
+                    else:
+                        part += f"Result:\n{res['result']}\n"
+                formatted_parts.append(part)
+                
+            formatted_tool_result = "\n".join(formatted_parts)
+            all_failed = all_failed_check
+            logger.info(f"[Orchestrator] Aggregate status - all_failed: {all_failed}")
+            
+            if all_failed:
+                formatted_tool_result += "\n\nCRITICAL INSTRUCTION: Because all required tool evidence could not be verified, you MUST NOT answer the user's question using your internal training data. You MUST clearly state that reliable current evidence could not be found to answer the query. Do not invent or guess the answer."
+            else:
+                formatted_tool_result += "\n\nCRITICAL INSTRUCTION: If one or more tools failed, clearly state that the requested information for that part could not be found, and answer the rest using the successful tool results. You MUST use verified results only. Do not invent missing tool results or use your internal training data to fill in the missing parts."
 
-        if "tomorrow" in message:
-
-            tool_result = get_relative_date(
-                1,
-                timezone
-            )
-
-        elif "yesterday" in message:
-
-            tool_result = get_relative_date(
-                -1,
-                timezone
-            )
-
-        else:
-
-            tool_result = get_current_date(
-                timezone
-            )
-
-    elif tool == "search":
-        from urllib.parse import urlparse
-
-        raw_search = search_web(tool_query)
-
-        if raw_search.get("error"):
-            tool_result = f"Search Error: {raw_search['error']}"
-        else:
-            results = raw_search.get("results", [])
-            # Sort results by date descending (newest first, None last)
-            def get_date(r):
-                d = r.get("published_date")
-                return d if d else ""
-            results.sort(key=get_date, reverse=True)
-
-            formatted_results = []
-            official_domains = ["python.org", "nextjs.org", "vercel.com", "mongodb.com", "oracle.com", "reactjs.org", "nodejs.org", "docker.com", "github.com", "microsoft.com", "apple.com"]
-            community_domains = ["reddit.com", "stackoverflow.com", "news.ycombinator.com", "twitter.com", "x.com", "youtube.com"]
-
-            for idx, r in enumerate(results, 1):
-                url = r.get("url", "")
-                try:
-                    domain = urlparse(url).netloc.lower()
-                    if domain.startswith("www."):
-                        domain = domain[4:]
-                except:
-                    domain = "unknown"
-
-                source_type = "Secondary/General"
-                if any(domain.endswith(d) or domain == d for d in official_domains):
-                    source_type = "Official/Primary"
-                elif any(domain.endswith(d) or domain == d for d in community_domains):
-                    source_type = "Community/Social"
-                elif "wikipedia.org" in domain:
-                    source_type = "Secondary/Reference"
-
-                score = r.get("score", "N/A")
-                date_val = r.get("published_date") or "Unknown"
-                title = r.get("title", "")
-                snippet = r.get("content", "")
-
-                res_str = (
-                    f"[RESULT {idx}]\n"
-                    f"Score: {score}\n"
-                    f"Date: {date_val}\n"
-                    f"Domain: {domain} ({source_type})\n"
-                    f"Title: {title}\n"
-                    f"URL: {url}\n"
-                    f"Snippet: {snippet}\n"
-                )
-                formatted_results.append(res_str)
-
-            tool_result = "\n".join(formatted_results)
-
-    if tool_result:
+    if formatted_tool_result:
 
         prompt_messages.append(
             {
@@ -651,6 +885,7 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
                 - Do not say "according to tool".
                 - Do not recalculate (unless calculating a relative date/time based on the tool's provided current datetime).
                 - Keep the response conversational.
+                - CRITICAL: DO NOT use or attempt to call any external tools (like web.run or search). The search has already been executed. Just synthesize the answer from the text below.
                 - For date/time, treat the tool's result as the absolute truth and never guess timezones from context.
                 - For web search:
                   1. Cite only URLs that exist in the provided search results.
@@ -665,7 +900,7 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
 
                 Tool result:
 
-                {tool_result}
+                {formatted_tool_result}
 
                 """
             }
@@ -716,7 +951,10 @@ def chat(user_id: str, conversation_id: str, message: str, timezone: str = None,
     # Ask Groq
     # -----------------------
 
-    if model_name == QWEN_IMAGE_MODEL:
+    if all_failed:
+        ai_reply = "I couldn't find reliable up-to-date evidence to answer that accurately. Please try again or broaden the search."
+        logger.info("[Chatbot] Skipping final LLM, returning deterministic failure.")
+    elif model_name == QWEN_IMAGE_MODEL:
         ai_reply = (
             _qwen_image_completion(prompt_messages)
             if image_data_url

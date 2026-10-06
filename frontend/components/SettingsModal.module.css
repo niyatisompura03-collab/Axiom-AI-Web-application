@@ -76,7 +76,7 @@
   color: #9ca3af;
   padding: 0.6rem 0.75rem;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 12px; /* rounded-xl */
   text-align: left;
   display: flex;
   align-items: center;
@@ -134,7 +134,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.25rem;
-  border-radius: 6px;
+  border-radius: 12px; /* rounded-xl */
   transition: background 0.2s, color 0.2s;
 }
 
@@ -145,4 +145,38 @@
 
 .contentBody {
   padding: 1.5rem 2rem 3rem;
+}
+
+@media (max-width: 768px) {
+  .modal {
+    flex-direction: column;
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    padding: 1rem 1.25rem 0.5rem;
+  }
+  
+  .tabList {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  
+  .tabButton {
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .contentHeader {
+    padding: 1rem 1.25rem;
+  }
+  
+  .contentBody {
+    padding: 1rem 1.25rem 2rem;
+  }
 }

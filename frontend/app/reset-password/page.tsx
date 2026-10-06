@@ -23,7 +23,7 @@ function ResetPasswordForm() {
     return (
       <div className="flex flex-col items-center justify-center text-center gap-4 py-8">
         <p className="text-red-400 font-medium">Invalid or missing reset token.</p>
-        <Link href="/forgot-password" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+        <Link href="/forgot-password" className="text-accent hover:text-accent hover:brightness-110 font-medium transition-colors">
           Request a new link
         </Link>
       </div>
@@ -117,7 +117,7 @@ export default function ResetPasswordPage() {
       footer={
         <Link
           href="/login"
-          className="flex items-center gap-2 text-violet-400 hover:text-violet-300 font-semibold transition-colors"
+          className="flex items-center gap-2 text-accent hover:text-accent hover:brightness-110 font-semibold transition-colors"
         >
           <ArrowLeft size={16} />
           Back to Login

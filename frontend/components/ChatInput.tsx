@@ -81,13 +81,13 @@ export default function ChatInput({
       duration-300
       focus-within:border-purple-500/50
       focus-within:bg-white/[0.04]
-      focus-within:shadow-[0_0_30px_rgba(139,92,246,.25)]
+      focus-within:shadow-[0_0_30px_var(--accent-color)]
       backdrop-blur-xl
       ">
         
         {/* Document Pill inside composer */}
         {activeDocument && (
-          <div className="flex items-center gap-2 bg-purple-500/20 text-purple-200 px-3 py-1.5 rounded-lg w-max border border-purple-500/30">
+          <div className="flex items-center gap-2 bg-purple-500/20 text-purple-200 px-3 py-1.5 rounded-xl w-max border border-purple-500/30">
             <Paperclip size={14} />
             <span className="text-sm font-medium truncate max-w-[200px]">{activeDocument.filename}</span>
             <button onClick={() => setActiveDocument(null)} className="hover:text-white transition-colors ml-1">
@@ -102,10 +102,13 @@ export default function ChatInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
           className="
-            mr-3
-            mb-3
+            mr-2
+            mb-1.5
+            p-2
+            rounded-xl
             text-gray-400
-            hover:text-purple-400
+            hover:text-accent
+            hover:bg-white/5
             transition-colors
             disabled:opacity-50
             flex-shrink-0
@@ -143,7 +146,7 @@ export default function ChatInput({
           bg-transparent
           outline-none
           text-white
-          placeholder:text-gray-500
+          placeholder:text-gray-400
           transition-all
           duration-300
           focus:placeholder:opacity-50
@@ -167,23 +170,24 @@ export default function ChatInput({
           }}
           disabled={!input.trim() || isUploading}
           className="
-          ml-4
-          mb-0
+          ml-3
+          mb-0.5
           flex
           items-center
           justify-center
-          h-11
-          w-11
+          h-10
+          w-10
+          shrink-0
           rounded-xl
           bg-gradient-to-br
-          from-violet-500
-          to-blue-600
+          from-accent
+          to-accent/70
           text-white
           transition-all
           duration-300
           hover:scale-[1.03]
           hover:brightness-110
-          hover:shadow-[0_0_20px_rgba(139,92,246,.5)]
+          hover:shadow-[0_0_20px_var(--accent-color)]
           disabled:opacity-50
           disabled:cursor-not-allowed
           disabled:hover:scale-100
@@ -191,7 +195,7 @@ export default function ChatInput({
           disabled:hover:brightness-100
           "
         >
-          <Send size={18} className="mr-0.5 mt-0.5" />
+          <Send size={16} className="ml-0.5" />
         </button>
         </div>
       </div>

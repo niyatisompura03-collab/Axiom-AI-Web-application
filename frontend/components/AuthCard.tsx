@@ -24,7 +24,7 @@ export default function AuthCard({ children, footer }: AuthCardProps) {
           border-white/10
           bg-[#0b0e14]/80
           backdrop-blur-3xl
-          shadow-[0_0_80px_rgba(139,92,246,0.12)]
+          shadow-[0_0_80px_var(--accent-color)]
           p-8
           md:p-10
           flex
@@ -35,11 +35,11 @@ export default function AuthCard({ children, footer }: AuthCardProps) {
         "
       >
         {/* Ambient Top Highlight Border */}
-        <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-violet-500/40 to-transparent blur-[1px]" />
+        <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent blur-[1px]" />
 
         {/* Logo and Header Text */}
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-violet-950/30 border border-violet-500/20 shadow-[0_0_20px_rgba(139,92,246,0.15)] overflow-hidden shrink-0 transition-transform duration-300 hover:scale-105">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-accent/10 border border-accent/20 shadow-[0_0_20px_var(--accent-color)] overflow-hidden shrink-0 transition-transform duration-300 hover:scale-105">
             <img 
               src="/axiom-icon.png" 
               alt="AXIOM Icon" 
@@ -50,7 +50,7 @@ export default function AuthCard({ children, footer }: AuthCardProps) {
             <img 
               src="/axiom-text.png" 
               alt="AXIOM" 
-              className="h-6 object-contain filter drop-shadow-[0_0_10px_rgba(139,92,246,0.15)]" 
+              className="h-6 object-contain filter drop-shadow-[0_0_10px_var(--accent-color)]" 
             />
             <p className="text-xs text-[#9aa3b2]/75 font-medium tracking-wide">
               Your intelligent AI assistant
