@@ -1,17 +1,32 @@
 @import "tailwindcss";
 
-:root{
-  --background:#050608;
-  --surface:#0f1118;
-  --surface2:#161926;
+@theme {
+  --color-accent: var(--accent-color);
+}
 
-  --border:rgba(255,255,255,.08);
+:root {
+  --background: #050608;
+  --surface: #0f1118;
+  --surface2: #161926;
 
-  --blue:#4aa8ff;
-  --purple:#8b5cf6;
+  --border: rgba(255, 255, 255, 0.08);
 
-  --text:#f5f7ff;
-  --muted:#9aa3b2;
+  --blue: #4aa8ff;
+  --purple: var(--accent-color, #8b5cf6); /* Uses accent-color if available */
+
+  --text: #f5f7ff;
+  --muted: #9aa3b2;
+
+  --app-bg: linear-gradient(180deg, #090b10, #050608);
+  --app-gradient-1: rgba(45, 120, 255, 0.12);
+  --app-gradient-2: rgba(151, 71, 255, 0.12);
+}
+
+.light {
+  --app-bg: linear-gradient(180deg, #e0e5ec, #ffffff);
+  --app-gradient-1: rgba(45, 120, 255, 0.05);
+  --app-gradient-2: rgba(151, 71, 255, 0.05);
+  --text: #1a1a2e;
 }
 
 *{
@@ -26,23 +41,13 @@ body{
   height:100%;
 }
 
-body{
-
+body {
   background:
-      radial-gradient(circle at 15% 20%,
-      rgba(45,120,255,.12),
-      transparent 30%),
+      radial-gradient(circle at 15% 20%, var(--app-gradient-1), transparent 30%),
+      radial-gradient(circle at 85% 15%, var(--app-gradient-2), transparent 28%),
+      var(--app-bg);
 
-      radial-gradient(circle at 85% 15%,
-      rgba(151,71,255,.12),
-      transparent 28%),
-
-      linear-gradient(
-      180deg,
-      #090b10,
-      #050608);
-
-  color:var(--text);
+  color: var(--text);
 
   font-family:
       Inter,
@@ -133,7 +138,7 @@ body{
 .prose pre {
     background: #0B0F18 !important;
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
+    border-radius: 12px; /* rounded-xl */
     padding: 1em;
     overflow-x: auto;
     margin: 1em 0;
@@ -163,4 +168,37 @@ body{
 .prose th {
     background: rgba(255,255,255,0.05);
     font-weight: 600;
-}
+}
+
+/* Animations Toggle */
+.no-animations *, .no-animations *::before, .no-animations *::after {
+  animation-duration: 0.001s !important;
+  transition-duration: 0.001s !important;
+}
+
+/* Compact Mode */
+.compact .prose {
+  line-height: 1.4;
+}
+.compact .prose p {
+  margin-bottom: 0.75em;
+}
+.compact .prose h1, .compact .prose h2, .compact .prose h3, .compact .prose h4 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+/* Global Icon Glow */
+svg[class*="lucide"], .lucide {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.15));
+  transition: filter 0.2s ease-in-out, transform 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+*:hover > svg[class*="lucide"], svg[class*="lucide"]:hover, *:hover > .lucide, .lucide:hover {
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.35));
+}
+.text-accent, .text-accent svg, .text-accent .lucide {
+  filter: drop-shadow(0 0 6px var(--accent-color));
+}
+*:hover > .text-accent, .text-accent:hover, *:hover > .text-accent svg, .text-accent svg:hover {
+  filter: drop-shadow(0 0 10px var(--accent-color));
+}

@@ -92,12 +92,12 @@ export default function MessageBubble({
             flex
             items-center
             justify-center
-            shadow-[0_0_12px_rgba(139,92,246,0.4)]
+            shadow-[0_0_12px_var(--accent-color)]
             shrink-0
             overflow-hidden
             bg-[#0d0d1a]
             border
-            border-violet-500/30
+            border-accent/30
           "
         >
           <img 
@@ -133,15 +133,15 @@ export default function MessageBubble({
                 ? `
                   bg-gradient-to-br
                   from-blue-500/20
-                  to-cyan-600/20
+                  to-accent/70/20
                   border-cyan-400/20
                   text-white
                   shadow-[0_0_20px_rgba(6,182,212,.15)]
                   rounded-br-sm
                 `
                 : `
-                  bg-white/[0.04]
-                  border-white/10
+                  bg-[#131620]
+                  border-white/5
                   text-gray-200
                   rounded-bl-sm
                 `
@@ -150,7 +150,7 @@ export default function MessageBubble({
         >
           {!isUser && (
             <div className="mb-1.5">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-violet-400 font-semibold">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-semibold">
                 AXIOM
               </p>
             </div>
@@ -170,8 +170,8 @@ export default function MessageBubble({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 bg-black/20 border border-white/10 px-3 py-2 rounded-lg text-sm max-w-[250px] md:max-w-[350px]">
-                  <FileText size={16} className={isUser ? "text-cyan-400 shrink-0" : "text-violet-400 shrink-0"} />
+                <div className="flex items-center gap-2 bg-black/20 border border-white/10 px-3 py-2 rounded-xl text-sm max-w-[250px] md:max-w-[350px]">
+                  <FileText size={16} className={isUser ? "text-cyan-400 shrink-0" : "text-accent shrink-0"} />
                   <span className="truncate opacity-90">{document.filename}</span>
                 </div>
               )}
@@ -193,21 +193,21 @@ export default function MessageBubble({
                           <button
                               onClick={handleCancelEdit}
                               disabled={isSaving}
-                              className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+                              className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
                           >
                               Cancel
                           </button>
                           <button
                               onClick={handleSaveEdit}
                               disabled={isSaving || !editContent.trim()}
-                              className="px-3 py-1.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 rounded-lg transition-colors disabled:opacity-50"
+                              className="px-3 py-1.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 rounded-xl transition-colors disabled:opacity-50"
                           >
                               {isSaving ? "Saving..." : "Save"}
                           </button>
                       </div>
                   </div>
               ) : (
-              <div className="prose prose-invert max-w-full min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed text-sm md:text-base">
+              <div className="prose prose-invert max-w-full min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed text-sm md:text-base prose-p:leading-relaxed prose-pre:bg-black/40 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl prose-headings:font-semibold prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline">
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}

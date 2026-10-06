@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
       footer={
         <Link
           href="/login"
-          className="flex items-center gap-2 text-violet-400 hover:text-violet-300 font-semibold transition-colors"
+          className="flex items-center gap-2 text-accent hover:text-accent hover:brightness-110 font-semibold transition-colors"
         >
           <ArrowLeft size={16} />
           Back to Login

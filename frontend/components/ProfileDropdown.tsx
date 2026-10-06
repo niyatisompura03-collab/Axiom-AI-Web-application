@@ -47,8 +47,8 @@ export default function ProfileDropdown({ isOpen, onClose, onOpenProfile, onOpen
               backdrop-blur-xl
               border
               border-white/10
-              rounded-none
-              shadow-[0_10px_40px_rgba(0,0,0,0.5),0_0_20px_rgba(139,92,246,0.1)]
+              rounded-xl
+              shadow-[0_10px_40px_rgba(0,0,0,0.5),0_0_20px_var(--accent-color)]
               flex
               flex-col
               z-50
@@ -58,7 +58,7 @@ export default function ProfileDropdown({ isOpen, onClose, onOpenProfile, onOpen
           >
             {/* Top Section */}
             <div className="p-4 flex items-center gap-3 bg-white/[0.02]">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_rgba(139,92,246,0.3)] overflow-hidden">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_var(--accent-color)] overflow-hidden">
                 {user?.avatar ? (
                   <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -75,11 +75,11 @@ export default function ProfileDropdown({ isOpen, onClose, onOpenProfile, onOpen
             {/* Menu Items */}
             <div className="p-2 flex flex-col">
 
-              <button onClick={onOpenProfile} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+              <button onClick={onOpenProfile} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
                 <UserCircle size={16} className="text-gray-400" />
                 <span>Profile</span>
               </button>
-              <button onClick={onOpenSettings} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+              <button onClick={onOpenSettings} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
                 <Settings size={16} className="text-gray-400" />
                 <span>Settings</span>
               </button>
@@ -89,11 +89,11 @@ export default function ProfileDropdown({ isOpen, onClose, onOpenProfile, onOpen
 
             {/* Bottom Menu Items */}
             <div className="p-2 flex flex-col">
-              <button onClick={onOpenHelp} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+              <button onClick={onOpenHelp} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
                 <HelpCircle size={16} className="text-gray-400" />
                 <span>Help</span>
               </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors group" onClick={() => { logout(); onClose(); }}>
+              <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors group" onClick={() => { logout(); onClose(); }}>
                 <LogOut size={16} className="text-gray-400 group-hover:text-red-400" />
                 <span>Log out</span>
               </button>

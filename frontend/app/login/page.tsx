@@ -40,7 +40,7 @@ export default function LoginPage() {
           Don't have an account?{" "}
           <Link
             href="/signup"
-            className="text-violet-400 hover:text-violet-300 font-semibold underline underline-offset-4 hover:no-underline transition-all ml-1"
+            className="text-accent hover:text-accent hover:brightness-110 font-semibold underline underline-offset-4 hover:no-underline transition-all ml-1"
           >
             Create account
           </Link>
@@ -73,7 +73,7 @@ export default function LoginPage() {
           <div className="flex justify-end -mt-2">
             <Link 
               href="/forgot-password" 
-              className="text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors"
+              className="text-xs text-accent hover:text-accent hover:brightness-110 font-medium transition-colors"
             >
               Forgot Password?
             </Link>

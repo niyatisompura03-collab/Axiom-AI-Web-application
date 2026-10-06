@@ -18,18 +18,18 @@ export default function AuthButton({ children, ...props }: AuthButtonProps) {
         px-4
         rounded-xl
         bg-gradient-to-r
-        from-violet-600
+        from-accent
         to-indigo-600
-        hover:from-violet-500
+        hover:from-accent
         hover:to-indigo-500
         text-white
         text-sm
         font-semibold
-        shadow-[0_4px_20px_rgba(139,92,246,0.25)]
-        hover:shadow-[0_4px_25px_rgba(139,92,246,0.4)]
+        shadow-[0_4px_20px_var(--accent-color)]
+        hover:shadow-[0_4px_25px_var(--accent-color)]
         focus:outline-none
         focus:ring-2
-        focus:ring-violet-500/50
+        focus:ring-accent/50
         transition-all
         duration-300
         flex

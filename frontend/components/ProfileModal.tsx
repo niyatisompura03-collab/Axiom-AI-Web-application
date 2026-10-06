@@ -199,7 +199,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
           <div className={styles.contentBody} style={{ padding: "2rem" }}>
             
             <div className="flex flex-col items-center justify-center mb-6 relative">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(139,92,246,0.3)] mb-4 overflow-hidden border-2 border-white/10">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-white shadow-[0_0_20px_var(--accent-color)] mb-4 overflow-hidden border-2 border-white/10">
                 {(isEditing ? editForm.avatar : user?.avatar) && !avatarError ? (
                   <img src={isEditing ? editForm.avatar : user?.avatar || ""} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                 ) : (
@@ -212,7 +212,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
               {!isEditing && (
                 <button 
                   onClick={() => setIsEditing(true)}
-                  className="absolute top-0 right-0 p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/5"
+                  className="absolute top-0 right-0 p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/5"
                   title="Edit Profile"
                 >
                   <Edit2 size={16} />
@@ -229,7 +229,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
 
             <div className="space-y-4">
               <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-2 block">Username</label>
+                <label className="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-2 block">Username</label>
                 {isEditing ? (
                   <input 
                     type="text" 
@@ -238,11 +238,11 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                       setEditForm(prev => ({ ...prev, username: e.target.value }));
                       setError("");
                     }}
-                    className="w-full bg-black/40 border border-violet-500/30 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-sm"
+                    className="w-full bg-black/40 border border-accent/30 rounded-xl px-3 py-2 text-white outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all text-sm"
                   />
                 ) : (
                   <div className="flex items-center gap-3 text-gray-300 text-sm">
-                    <User size={16} className="text-gray-500" />
+                    <User size={16} className="text-gray-400" />
                     <span>{user?.username}</span>
                   </div>
                 )}
@@ -250,18 +250,18 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
               
               {/* Email Section */}
               <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-2 block">Email</label>
+                <label className="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-2 block">Email</label>
                 <div className="flex items-center gap-3 text-gray-300 text-sm">
-                  <Mail size={16} className="text-gray-500" />
-                  <span className={!user?.email ? "text-gray-500 italic" : ""}>{user?.email || "No email associated"}</span>
+                  <Mail size={16} className="text-gray-400" />
+                  <span className={!user?.email ? "text-gray-400 italic" : ""}>{user?.email || "No email associated"}</span>
                 </div>
               </div>
               
               {isEditing && (
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                  <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-3 block">Avatar</label>
+                  <label className="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-3 block">Avatar</label>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-white overflow-hidden border-2 border-white/10 shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-white overflow-hidden border-2 border-white/10 shrink-0">
                       {editForm.avatar && !avatarError ? (
                         <img src={editForm.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                       ) : (
@@ -279,7 +279,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                       <button 
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300 transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg border border-white/5 w-fit"
+                        className="flex items-center gap-2 text-sm text-accent hover:text-accent hover:brightness-110 transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl border border-white/5 w-fit"
                       >
                         <Camera size={14} />
                         Choose Photo
@@ -291,7 +291,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                             setEditForm(prev => ({ ...prev, avatar: "" }));
                             if (fileInputRef.current) fileInputRef.current.value = "";
                           }}
-                          className="text-xs text-gray-500 hover:text-red-400 transition-colors text-left pl-1"
+                          className="text-xs text-gray-400 hover:text-red-400 transition-colors text-left pl-1"
                         >
                           Remove photo
                         </button>
@@ -302,7 +302,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
               )}
 
               <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                <label className="text-xs text-gray-500 uppercase font-semibold tracking-wider mb-2 block">Date of Birth <span className="text-gray-600 normal-case font-normal ml-1">(Optional)</span></label>
+                <label className="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-2 block">Date of Birth <span className="text-gray-500 normal-case font-normal ml-1">(Optional)</span></label>
                 {isEditing ? (
                   <div className="flex items-center gap-2">
                     <input 
@@ -314,7 +314,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                         setEditForm(prev => ({ ...prev, dob: e.target.value }));
                         setError("");
                       }}
-                      className="flex-1 bg-black/40 border border-violet-500/30 rounded-lg px-3 py-2 text-white outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all text-sm [color-scheme:dark]"
+                      className="flex-1 bg-black/40 border border-accent/30 rounded-xl px-3 py-2 text-white outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all text-sm [color-scheme:dark]"
                     />
                     {editForm.dob && (
                       <button
@@ -323,7 +323,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                           setEditForm(prev => ({ ...prev, dob: "" }));
                           setError("");
                         }}
-                        className="px-3 py-2 text-xs font-medium text-gray-400 hover:text-red-400 bg-white/5 hover:bg-white/10 rounded-lg border border-white/5 transition-colors whitespace-nowrap"
+                        className="px-3 py-2 text-xs font-medium text-gray-400 hover:text-red-400 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 transition-colors whitespace-nowrap"
                         title="Clear date of birth"
                       >
                         Clear
@@ -332,7 +332,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 text-gray-300 text-sm">
-                    <Calendar size={16} className="text-gray-500" />
+                    <Calendar size={16} className="text-gray-400" />
                     <span>{formatDateDisplay(user?.dob)}</span>
                   </div>
                 )}
@@ -344,14 +344,14 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                 <button
                   onClick={handleCancel}
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || !editForm.username.trim()}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_rgba(139,92,246,0.3)] hover:shadow-[0_0_20px_rgba(139,92,246,0.5)]"
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium text-white bg-accent hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_var(--accent-color)] hover:shadow-[0_0_20px_var(--accent-color)]"
                 >
                   {saving ? "Saving..." : (
                     <>

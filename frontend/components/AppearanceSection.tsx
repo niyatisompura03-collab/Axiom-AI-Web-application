@@ -90,6 +90,36 @@ const AppearanceSection: React.FC<{ username: string }> = ({ username }) => {
   return (
     <div className={styles.container}>
       <div className={styles.field}>
+        <label htmlFor="theme">Theme</label>
+        <select
+          name="theme"
+          id="theme"
+          value={settings.theme}
+          onChange={handleChange}
+          className={styles.select}
+        >
+          <option value="dark">Dark (Default)</option>
+          <option value="light">Light</option>
+          <option value="system">System</option>
+        </select>
+      </div>
+
+      <div className={styles.field}>
+        <label htmlFor="accent_color">Accent Color</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            name="accent_color"
+            id="accent_color"
+            value={settings.accent_color}
+            onChange={handleChange}
+            className={styles.colorInput}
+          />
+          <span className="text-sm text-gray-400 font-mono uppercase">{settings.accent_color}</span>
+        </div>
+      </div>
+
+      <div className={styles.field}>
         <label htmlFor="compact_mode">Compact Mode</label>
         <input
           type="checkbox"
@@ -100,6 +130,7 @@ const AppearanceSection: React.FC<{ username: string }> = ({ username }) => {
           className={styles.checkbox}
         />
       </div>
+      
       <div className={styles.field}>
         <label htmlFor="animations">Animations</label>
         <input
@@ -111,7 +142,6 @@ const AppearanceSection: React.FC<{ username: string }> = ({ username }) => {
           className={styles.checkbox}
         />
       </div>
-      <p className={styles.note}>Future dark/light support will automatically adapt when the OS theme changes.</p>
       <button onClick={handleSave} disabled={saving || saved} className={styles.saveButton}>
         {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
       </button>
