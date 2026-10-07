@@ -92,18 +92,23 @@ export default function MessageBubble({
             flex
             items-center
             justify-center
-            shadow-[0_0_12px_var(--accent-color)]
+            shadow-elevation
             shrink-0
             overflow-hidden
-            bg-[#0d0d1a]
+            bg-surface-secondary
             border
-            border-accent/30
+            border-border
           "
         >
           <img 
-            src="/axiom-icon.png" 
+            src="/brand/axiom-mark-white.png" 
             alt="Axiom Avatar" 
-            className="w-full h-full object-contain p-1"
+            className="w-full h-full object-contain p-1 dark-logo"
+          />
+          <img 
+            src="/brand/axiom-mark-black.png" 
+            alt="Axiom Avatar" 
+            className="w-full h-full object-contain p-1 light-logo"
           />
         </div>
       )}
@@ -126,24 +131,20 @@ export default function MessageBubble({
             backdrop-blur-xl
             transition-all
             duration-300
-            hover:shadow-[0_0_30px_rgba(100,120,255,.15)]
 
             ${
               isUser
                 ? `
-                  bg-gradient-to-br
-                  from-blue-500/20
-                  to-accent/70/20
-                  border-cyan-400/20
-                  text-white
-                  shadow-[0_0_20px_rgba(6,182,212,.15)]
+                  bg-surface-secondary
+                  border-border
+                  text-text-primary
+                  shadow-elevation
                   rounded-br-sm
                 `
                 : `
-                  bg-[#131620]
-                  border-white/5
-                  text-gray-200
-                  rounded-bl-sm
+                  bg-transparent
+                  border-transparent
+                  text-text-primary
                 `
             }
           `}
@@ -159,19 +160,19 @@ export default function MessageBubble({
           {document && (
             <div className="mb-3 max-w-full">
               {document.type === 'image' && document.content ? (
-                <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-lg inline-block max-w-full">
+                <div className="relative rounded-xl overflow-hidden border border-border shadow-lg inline-block max-w-full">
                   <img 
                     src={`data:${document.mime_type || 'image/png'};base64,${document.content}`} 
                     alt={document.filename}
                     className="max-w-full h-auto max-h-[300px] object-contain bg-black/40"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs text-gray-200 truncate border-t border-white/10">
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm px-3 py-1.5 text-xs text-white truncate border-t border-border">
                     {document.filename}
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 bg-black/20 border border-white/10 px-3 py-2 rounded-xl text-sm max-w-[250px] md:max-w-[350px]">
-                  <FileText size={16} className={isUser ? "text-cyan-400 shrink-0" : "text-accent shrink-0"} />
+                <div className="flex items-center gap-2 bg-surface-input border border-border px-3 py-2 rounded-xl text-sm max-w-[250px] md:max-w-[350px]">
+                  <FileText size={16} className="text-accent shrink-0" />
                   <span className="truncate opacity-90">{document.filename}</span>
                 </div>
               )}
@@ -186,28 +187,30 @@ export default function MessageBubble({
                       <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full max-w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm md:text-base text-white focus:outline-none focus:border-cyan-400/50 resize-none min-h-[100px] break-words [overflow-wrap:anywhere]"
+                          className="w-full max-w-full bg-surface-input border border-border rounded-xl p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent focus:shadow-focus resize-none min-h-[100px] break-words [overflow-wrap:anywhere]"
                           disabled={isSaving}
                       />
                       <div className="flex justify-end gap-2">
                           <button
+                              type="button"
                               onClick={handleCancelEdit}
                               disabled={isSaving}
-                              className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
+                              className="h-8 px-3 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary border border-transparent hover:border-border transition-colors disabled:opacity-50 cursor-pointer"
                           >
                               Cancel
                           </button>
                           <button
+                              type="button"
                               onClick={handleSaveEdit}
                               disabled={isSaving || !editContent.trim()}
-                              className="px-3 py-1.5 text-xs font-medium bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 rounded-xl transition-colors disabled:opacity-50"
+                              className="h-8 px-3.5 rounded-xl text-xs font-medium bg-accent hover:bg-accent-hover text-white shadow-elevation transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                           >
                               {isSaving ? "Saving..." : "Save"}
                           </button>
                       </div>
                   </div>
               ) : (
-              <div className="prose prose-invert max-w-full min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed text-sm md:text-base prose-p:leading-relaxed prose-pre:bg-black/40 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl prose-headings:font-semibold prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline">
+              <div className="prose max-w-full min-w-0 break-words [overflow-wrap:anywhere] leading-relaxed text-sm md:text-base hover:prose-a:underline">
                   <ReactMarkdown 
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
@@ -226,35 +229,38 @@ export default function MessageBubble({
 
         {/* Action Buttons (Copy & Regenerate) */}
         {!isUser && content !== "Thinking..." && (
-            <div className="flex gap-2 mt-1 ml-2 opacity-60 hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 mt-1 ml-1 opacity-70 hover:opacity-100 transition-opacity">
                 <button 
+                    type="button"
                     onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
                 >
-                    {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                    {copied ? "Copied!" : "Copy"}
+                    {copied ? <Check size={13} className="text-success" /> : <Copy size={13} className="text-text-muted" />}
+                    <span>{copied ? "Copied!" : "Copy"}</span>
                 </button>
                 
                 {isLast && (
                     <button 
+                        type="button"
                         onClick={regenerateResponse}
-                        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors ml-3"
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors cursor-pointer"
                     >
-                        <RefreshCw size={14} />
-                        Regenerate
+                        <RefreshCw size={13} className="text-text-muted" />
+                        <span>Regenerate</span>
                     </button>
                 )}
             </div>
         )}
         
         {isUser && !isEditing && (
-            <div className="flex justify-end gap-2 mt-1 mr-2 opacity-60 hover:opacity-100 transition-opacity">
+            <div className="flex justify-end gap-1 mt-1 mr-1 opacity-70 hover:opacity-100 transition-opacity">
                 <button 
+                    type="button"
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-1.5 text-xs text-cyan-400/80 hover:text-cyan-300 transition-colors"
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-text-secondary hover:text-accent hover:bg-surface-secondary transition-colors cursor-pointer"
                 >
-                    <Edit2 size={12} />
-                    Edit
+                    <Edit2 size={12} className="text-text-muted" />
+                    <span>Edit</span>
                 </button>
             </div>
         )}
@@ -272,12 +278,12 @@ export default function MessageBubble({
             flex
             items-center
             justify-center
-            shadow-[0_0_12px_rgba(6,182,212,0.4)]
+            shadow-elevation
             shrink-0
             overflow-hidden
-            bg-[#0b1329]
+            bg-surface-secondary
             border
-            border-cyan-400/30
+            border-border
           "
         >
           {user?.avatar ? (

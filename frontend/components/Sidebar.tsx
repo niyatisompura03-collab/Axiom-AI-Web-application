@@ -70,224 +70,272 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   return (
     <>
       <motion.div
-        animate={{ width: isOpen ? 280 : 80 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="h-full border-r border-white/10 bg-[#070A10]/95 backdrop-blur-2xl flex flex-col shrink-0 overflow-hidden relative z-10"
+        animate={{ width: isOpen ? 260 : 68 }}
+        transition={{ type: "spring", stiffness: 350, damping: 35 }}
+        className="h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden relative z-20"
       >
-      {/* Top Header */}
-      {isOpen ? (
-        <div className="p-4 flex items-center justify-between border-b border-white/5 h-[73px] md:h-[89px]">
-          <img 
-            src="/axiom-text.png" 
-            alt="AXIOM" 
-            className="h-6 md:h-7 object-contain object-left filter drop-shadow-[0_0_12px_var(--accent-color)]" 
-          />
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-            title="Collapse sidebar"
-          >
-            <PanelLeftClose size={18} />
-          </button>
-        </div>
-      ) : (
-        <div className="p-4 flex flex-col items-center justify-center border-b border-white/5 h-[73px] md:h-[89px] shrink-0 relative">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-950/40 border border-accent/30 shadow-[0_0_10px_var(--accent-color)] overflow-hidden shrink-0">
-            <img 
-              src="/axiom-icon.png" 
-              alt="AXIOM Icon" 
-              className="w-full h-full object-contain p-1" 
-            />
-          </div>
-          <button
-            onClick={() => setIsOpen(true)}
-            className="absolute bottom-1 p-1 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-            title="Expand sidebar"
-          >
-            <PanelLeftOpen size={16} />
-          </button>
-        </div>
-      )}
-
-      {/* New Chat Button */}
-      <div className="p-3 flex justify-center">
+        {/* Top Header */}
         {isOpen ? (
-          <button
-            onClick={() => startNewChat()}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-white font-medium text-sm transition-all duration-300 hover:border-accent/40 hover:shadow-[0_0_15px_var(--accent-color)] group"
-          >
-            <Plus size={16} className="text-white group-hover:scale-110 transition-transform" />
-            New Chat
-          </button>
+          <div className="h-16 px-4 flex items-center justify-between border-b border-border shrink-0">
+            <div className="flex items-center gap-2.5">
+              <img 
+                src="/brand/axiom-mark-white.png" 
+                alt="Axiom" 
+                className="h-6 w-auto object-contain shrink-0 dark-logo" 
+              />
+              <img 
+                src="/brand/axiom-mark-black.png" 
+                alt="Axiom" 
+                className="h-6 w-auto object-contain shrink-0 light-logo" 
+              />
+              <img 
+                src="/brand/axiom-wordmark-white.png" 
+                alt="AXIOM" 
+                className="h-4.5 w-auto object-contain dark-logo" 
+              />
+              <img 
+                src="/brand/axiom-wordmark-black.png" 
+                alt="AXIOM" 
+                className="h-4.5 w-auto object-contain light-logo" 
+              />
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              aria-label="Collapse sidebar"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-input transition-colors cursor-pointer"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose size={17} />
+            </button>
+          </div>
         ) : (
-          <button
-            onClick={() => startNewChat()}
-            className="w-10 h-10 flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-white transition-all duration-300 hover:border-accent/40 hover:shadow-[0_0_15px_var(--accent-color)] group shrink-0"
-            title="New Chat"
-          >
-            <Plus size={16} className="text-accent group-hover:scale-110 transition-transform" />
-          </button>
-        )}
-      </div>
-
-      {/* Conversation History */}
-      <div className={`flex-1 overflow-y-auto px-2 py-2 flex flex-col ${isOpen ? 'gap-1' : 'items-center gap-2'}`}>
-        {isOpen && (
-          <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-semibold">
-            Recent Chats
+          <div className="h-16 px-2 flex items-center justify-center border-b border-border shrink-0">
+            <button
+              onClick={() => setIsOpen(true)}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-input transition-colors group cursor-pointer relative"
+            >
+              <img 
+                src="/brand/axiom-mark-white.png" 
+                alt="Axiom" 
+                className="h-5.5 w-auto object-contain group-hover:opacity-0 transition-opacity dark-logo" 
+              />
+              <img 
+                src="/brand/axiom-mark-black.png" 
+                alt="Axiom" 
+                className="h-5.5 w-auto object-contain group-hover:opacity-0 transition-opacity light-logo" 
+              />
+              <PanelLeftOpen size={18} className="absolute opacity-0 group-hover:opacity-100 text-accent transition-opacity" />
+            </button>
           </div>
         )}
-        
-        {recentConversations.map((conv) => {
-          const isActive = conversationId === conv.conversation_id;
-          const isEditing = editingId === conv.conversation_id;
 
-          return isOpen ? (
-            <div
-              key={conv.conversation_id}
-              onClick={() => !isEditing && loadConversation(conv.conversation_id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all duration-200 group cursor-pointer border ${
-                isActive 
-                  ? "bg-accent/10 text-accent border-accent/20 shadow-[0_0_10px_var(--accent-color)]" 
-                  : "text-gray-400 hover:text-white hover:bg-white/[0.04] border-transparent hover:border-white/5"
-              }`}
+        {/* New Chat Action */}
+        <div className={`p-3 shrink-0 ${isOpen ? '' : 'flex justify-center'}`}>
+          {isOpen ? (
+            <button
+              onClick={() => startNewChat()}
+              className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-border bg-surface-input hover:bg-surface hover:border-accent/40 text-text-primary font-medium text-xs transition-all duration-150 active:scale-[0.99] group cursor-pointer shadow-elevation"
             >
-              <MessageSquare size={16} className={isActive ? "text-accent shrink-0" : "text-gray-400 group-hover:text-gray-400 shrink-0"} />
-
-              {isEditing ? (
-                <form 
-                  onSubmit={(e) => handleSaveEdit(e, conv.conversation_id)}
-                  className="flex items-center gap-1 flex-1"
-                >
-                  <input
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 bg-white/10 border border-accent/50 rounded px-2 py-0.5 text-xs text-white outline-none focus:ring-1 focus:ring-accent"
-                  />
-                  <button 
-                    type="button"
-                    onClick={(e) => handleSaveEdit(e, conv.conversation_id)} 
-                    className="p-1 hover:text-green-400 text-gray-300 transition-colors"
-                  >
-                    <Check size={14} />
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={handleCancelEdit} 
-                    className="p-1 hover:text-red-400 text-gray-300 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                </form>
-              ) : (
-                <>
-                  <span className="truncate flex-1" title={conv.title}>
-                    {conv.title}
-                  </span>
-                  
-                  {/* Action buttons on hover */}
-                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
-                    <button
-                      onClick={(e) => handleStartEdit(e, conv.conversation_id, conv.title)}
-                      className="p-1 text-gray-400 hover:text-white transition-colors"
-                      title="Rename"
-                    >
-                      <Edit2 size={13} />
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, conv.conversation_id)}
-                      className="p-1 text-gray-400 hover:text-red-400 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+              <Plus size={15} className="text-accent group-hover:scale-110 transition-transform shrink-0" />
+              <span>New Chat</span>
+            </button>
           ) : (
             <button
-              key={conv.conversation_id}
-              onClick={() => loadConversation(conv.conversation_id)}
-              className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 group shrink-0 border ${
-                isActive 
-                  ? "bg-accent/10 text-accent border-accent/20 shadow-[0_0_10px_var(--accent-color)]" 
-                  : "text-gray-400 hover:text-white hover:bg-white/[0.04] border-transparent hover:border-white/5"
-              }`}
-              title={conv.title}
+              onClick={() => startNewChat()}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-surface-input hover:bg-surface hover:border-accent/40 text-text-primary transition-all duration-150 active:scale-[0.98] group shrink-0 cursor-pointer shadow-elevation"
+              title="New Chat"
             >
-              <MessageSquare size={16} className={isActive ? "text-accent" : "text-gray-400 group-hover:text-gray-400"} />
+              <Plus size={16} className="text-accent group-hover:scale-110 transition-transform" />
             </button>
-          );
-        })}
-      </div>
+          )}
+        </div>
 
-      {/* Bottom Actions & User Profile */}
-      <div className="p-3 border-t border-white/5 space-y-1 bg-[#05070B]/50 flex flex-col items-center">
-        {isOpen ? (
-          <>
+        {/* Conversation History */}
+        <div className={`flex-1 overflow-y-auto px-2 py-1 flex flex-col ${isOpen ? 'gap-0.5' : 'items-center gap-1.5'}`}>
+          {isOpen && (
+            <div className="px-3 pt-2 pb-1.5 text-[10px] uppercase tracking-wider text-text-muted font-medium select-none">
+              Recent Chats
+            </div>
+          )}
+          
+          {recentConversations.map((conv) => {
+            const isActive = conversationId === conv.conversation_id;
+            const isEditing = editingId === conv.conversation_id;
 
-
-
-            {/* User Profile */}
-            {isAuthenticated ? (
-              <div 
-                className="w-full flex items-center gap-3 px-3 py-3 mt-2 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer hover:bg-white/[0.04] transition-colors relative"
-                onClick={() => setIsProfileDropdownOpen(true)}
+            return isOpen ? (
+              <div
+                key={conv.conversation_id}
+                onClick={() => !isEditing && loadConversation(conv.conversation_id)}
+                className={`w-full min-h-[36px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-colors duration-150 group cursor-pointer border ${
+                  isActive 
+                    ? "bg-accent-subtle/80 text-text-primary font-medium border-accent/25" 
+                    : "text-text-secondary hover:text-text-primary hover:bg-surface-input/80 border-transparent"
+                }`}
               >
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_var(--accent-color)] overflow-hidden">
-                  {user?.avatar && !avatarError ? <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} /> : <User size={15} />}
-                </div>
-                <div className="flex flex-col truncate">
-                  <span className="text-xs font-semibold text-white truncate">{user?.username}</span>
-                  <span className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-bold text-gray-300 uppercase tracking-wider self-start">Free</span>
-                </div>
+                <MessageSquare 
+                  size={15} 
+                  className={isActive ? "text-accent shrink-0" : "text-text-muted group-hover:text-text-secondary transition-colors shrink-0"} 
+                />
+
+                {isEditing ? (
+                  <form 
+                    onSubmit={(e) => handleSaveEdit(e, conv.conversation_id)}
+                    className="flex items-center gap-1 flex-1 min-w-0"
+                  >
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      autoFocus
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 h-7 bg-surface-input border border-accent rounded-lg px-2 text-xs text-text-primary outline-none focus:shadow-focus min-w-0"
+                    />
+                    <button 
+                      type="button"
+                      onClick={(e) => handleSaveEdit(e, conv.conversation_id)} 
+                      aria-label="Save title"
+                      className="w-6 h-6 flex items-center justify-center rounded-md text-success hover:bg-success/10 transition-colors cursor-pointer shrink-0"
+                    >
+                      <Check size={13} />
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={handleCancelEdit} 
+                      aria-label="Cancel editing"
+                      className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-error hover:bg-error/10 transition-colors cursor-pointer shrink-0"
+                    >
+                      <X size={13} />
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <span 
+                      className={`truncate flex-1 min-w-0 text-xs ${isActive ? "text-text-primary font-medium" : "text-text-secondary group-hover:text-text-primary"}`} 
+                      title={conv.title}
+                    >
+                      {conv.title}
+                    </span>
+                    
+                    {/* Action buttons */}
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => handleStartEdit(e, conv.conversation_id, conv.title)}
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-surface transition-colors cursor-pointer"
+                        title="Rename"
+                        aria-label="Rename conversation"
+                      >
+                        <Edit2 size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(e, conv.conversation_id)}
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-error hover:bg-error/10 transition-colors cursor-pointer"
+                        title="Delete"
+                        aria-label="Delete conversation"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
-              <div className="w-full flex flex-col gap-2 mt-2">
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/5">
-                  <div className="w-8 h-8 rounded-xl bg-gray-800 flex items-center justify-center text-gray-400 shrink-0">
-                    <User size={15} />
-                  </div>
-                  <div className="flex flex-col truncate">
-                    <span className="text-xs font-semibold text-white truncate">Guest</span>
-                    <span className="text-[9px] text-gray-400 truncate">Not logged in</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Link href="/login" className="flex-1 py-1.5 px-2 bg-accent hover:bg-accent text-white text-[11px] font-medium rounded text-center transition-colors">
-                    Log in
-                  </Link>
-                  <Link href="/signup" className="flex-1 py-1.5 px-2 bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium rounded text-center transition-colors">
-                    Sign up
-                  </Link>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-
-            {/* User Profile */}
-            {isAuthenticated ? (
-              <div 
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_var(--accent-color)] cursor-pointer overflow-hidden"
-                title={`${user?.username}`}
-                onClick={() => setIsProfileDropdownOpen(true)}
+              <button
+                key={conv.conversation_id}
+                onClick={() => loadConversation(conv.conversation_id)}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-150 group shrink-0 border cursor-pointer ${
+                  isActive 
+                    ? "bg-accent-subtle/80 text-accent border-accent/25" 
+                    : "text-text-muted hover:text-text-primary hover:bg-surface-input border-transparent"
+                }`}
+                title={conv.title}
               >
-                {user?.avatar && !avatarError ? <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} /> : <User size={15} />}
-              </div>
-            ) : (
-              <Link href="/login" className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-gray-400 shrink-0 hover:text-white hover:bg-gray-700 transition-colors" title="Log in / Sign up">
-                <User size={15} />
-              </Link>
-            )}
-          </>
-        )}
-      </div>
+                <MessageSquare size={16} className={isActive ? "text-accent" : "text-text-muted group-hover:text-text-primary transition-colors"} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Bottom Actions & User Profile */}
+        <div className="p-3 border-t border-border bg-surface-secondary flex flex-col items-center shrink-0">
+          {isOpen ? (
+            <>
+              {isAuthenticated ? (
+                <div 
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-surface-input hover:bg-surface border border-border cursor-pointer transition-colors relative group"
+                  onClick={() => setIsProfileDropdownOpen(true)}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-accent/20 border border-border flex items-center justify-center text-accent shrink-0 overflow-hidden">
+                    {user?.avatar && !avatarError ? (
+                      <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
+                    ) : (
+                      <User size={15} />
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-xs font-medium text-text-primary truncate">{user?.username}</span>
+                    <span className="text-[10px] text-text-muted font-normal">Free Plan</span>
+                  </div>
+                  <Settings size={14} className="text-text-muted group-hover:text-text-primary transition-colors shrink-0 ml-auto" />
+                </div>
+              ) : (
+                <div className="w-full flex flex-col gap-2">
+                  <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-surface-input border border-border">
+                    <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center text-text-muted shrink-0">
+                      <User size={14} />
+                    </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-xs font-medium text-text-primary truncate">Guest</span>
+                      <span className="text-[10px] text-text-muted truncate">Not signed in</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 w-full">
+                    <Link 
+                      href="/login" 
+                      className="flex-1 h-8.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-medium flex items-center justify-center transition-colors"
+                    >
+                      Log in
+                    </Link>
+                    <Link 
+                      href="/signup" 
+                      className="flex-1 h-8.5 rounded-xl bg-surface hover:bg-surface-input border border-border text-text-primary text-xs font-medium flex items-center justify-center transition-colors"
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {isAuthenticated ? (
+                <button 
+                  type="button"
+                  className="w-10 h-10 rounded-xl bg-surface-input hover:bg-surface border border-border flex items-center justify-center text-text-primary shrink-0 cursor-pointer overflow-hidden transition-colors"
+                  title={`${user?.username}`}
+                  onClick={() => setIsProfileDropdownOpen(true)}
+                >
+                  {user?.avatar && !avatarError ? (
+                    <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
+                  ) : (
+                    <User size={16} className="text-text-secondary" />
+                  )}
+                </button>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className="w-10 h-10 rounded-xl bg-surface-input hover:bg-surface border border-border flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors" 
+                  title="Log in / Sign up"
+                >
+                  <User size={16} />
+                </Link>
+              )}
+            </>
+          )}
+        </div>
 {showSettings && (
   <SettingsModal
     username={user?.username ?? ""}

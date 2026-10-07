@@ -13,25 +13,22 @@ export default function AuthButton({ children, ...props }: AuthButtonProps) {
       whileTap={{ scale: 0.98 }}
       className="
         w-full
+        h-11
         mt-1
-        py-3
         px-4
         rounded-xl
-        bg-gradient-to-r
-        from-accent
-        to-indigo-600
-        hover:from-accent
-        hover:to-indigo-500
+        bg-accent
+        hover:bg-accent-hover
         text-white
         text-sm
-        font-semibold
-        shadow-[0_4px_20px_var(--accent-color)]
-        hover:shadow-[0_4px_25px_var(--accent-color)]
+        font-medium
+        shadow-elevation
         focus:outline-none
-        focus:ring-2
-        focus:ring-accent/50
+        focus-visible:shadow-focus
+        disabled:opacity-50
+        disabled:cursor-not-allowed
         transition-all
-        duration-300
+        duration-200
         flex
         items-center
         justify-center
@@ -41,7 +38,7 @@ export default function AuthButton({ children, ...props }: AuthButtonProps) {
       {...props}
     >
       <span>{children}</span>
-      <ArrowRight size={16} />
+      <ArrowRight size={16} className="shrink-0" />
     </motion.button>
   );
 }

@@ -7,35 +7,71 @@ import { LucideIcon } from "lucide-react";
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   icon: LucideIcon;
+  error?: boolean;
+  errorMessage?: string;
 }
 
-export default function AuthInput({ label, icon: Icon, type, ...props }: AuthInputProps) {
+export default function AuthInput({ 
+  label, 
+  icon: Icon, 
+  type, 
+  error,
+  errorMessage,
+  disabled,
+  className = "", 
+  ...props 
+}: AuthInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
   const currentType = isPassword && showPassword ? "text" : type;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={props.id} className="text-[10px] font-bold tracking-wider text-[#9aa3b2] uppercase ml-1">
+    <div className={`flex flex-col gap-1.5 ${disabled ? "opacity-60" : ""}`}>
+      <label htmlFor={props.id} className="text-xs font-medium text-text-secondary ml-0.5">
         {label}
       </label>
-      <div className="flex items-center gap-2 px-3 py-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] focus-within:bg-white/[0.05] focus-within:border-accent/50 focus-within:shadow-[0_0_15px_var(--accent-color)] transition-all duration-300 group">
-        <Icon size={16} className="text-gray-400 group-focus-within:text-accent transition-colors duration-200 shrink-0" />
+      <div 
+        className={`
+          flex items-center gap-2.5 px-3.5 h-11 rounded-xl border bg-surface-input 
+          transition-all duration-200 group
+          ${error 
+            ? "border-error focus-within:border-error" 
+            : "border-border hover:border-text-muted/30 focus-within:border-accent focus-within:shadow-focus"
+          }
+          ${disabled ? "cursor-not-allowed" : ""}
+        `}
+      >
+        <Icon 
+          size={16} 
+          className={`shrink-0 transition-colors duration-200 ${
+            error 
+              ? "text-error" 
+              : "text-text-muted group-focus-within:text-accent"
+          }`} 
+        />
         <input
           type={currentType}
+          disabled={disabled}
           {...props}
-          className={`flex-1 bg-transparent text-white text-sm placeholder-gray-500 focus:outline-none min-w-0 ${props.className || ""}`}
+          className={`flex-1 bg-transparent text-text-primary text-sm placeholder:text-text-muted focus:outline-none min-w-0 ${disabled ? "cursor-not-allowed" : ""} ${className}`}
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="text-gray-400 hover:text-white transition-colors duration-200 shrink-0 p-0.5"
+            disabled={disabled}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors duration-200 shrink-0 cursor-pointer disabled:cursor-not-allowed"
           >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         )}
       </div>
+      {errorMessage && (
+        <p className="text-xs text-error ml-0.5" role="alert">
+          {errorMessage}
+        </p>
+      )}
     </div>
   );
 }

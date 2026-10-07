@@ -26,7 +26,7 @@ export default function TypingIndicator() {
             delay: index * 0.22,
             ease: "easeInOut",
           }}
-          className="w-5 h-5 md:w-6 md:h-6 object-contain filter drop-shadow-[0_0_10px_rgba(168,85,247,0.7)]"
+          className="w-5 h-5 md:w-6 md:h-6 object-contain"
         />
       ))}
     </div>

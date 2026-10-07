@@ -34,67 +34,82 @@ export default function ProfileDropdown({ isOpen, onClose, onOpenProfile, onOpen
           />
           
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="
               absolute
               bottom-16
-              left-4
-              w-64
-              bg-[#161b22]/95
+              left-3
+              w-58
+              bg-surface-secondary/95
               backdrop-blur-xl
               border
-              border-white/10
+              border-border
               rounded-xl
-              shadow-[0_10px_40px_rgba(0,0,0,0.5),0_0_20px_var(--accent-color)]
+              shadow-elevation
               flex
               flex-col
               z-50
               overflow-hidden
-              text-sm
             "
           >
             {/* Top Section */}
-            <div className="p-4 flex items-center gap-3 bg-white/[0.02]">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_var(--accent-color)] overflow-hidden">
+            <div className="p-3 flex items-center gap-2.5 bg-surface-input/80">
+              <div className="w-8 h-8 rounded-lg bg-accent/20 border border-border flex items-center justify-center text-accent shrink-0 overflow-hidden">
                 {user?.avatar ? (
                   <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                  <User size={20} />
+                  <User size={15} />
                 )}
               </div>
-              <div className="flex flex-col flex-1 overflow-hidden">
-                <span className="font-semibold text-white truncate">{user?.username || "Guest"}</span>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs font-medium text-text-primary truncate">{user?.username || "Guest"}</span>
+                <span className="text-[10px] text-text-muted truncate">{user?.email || "Free Plan"}</span>
               </div>
             </div>
 
-            <div className="h-[1px] w-full bg-white/10" />
+            <div className="h-[1px] w-full bg-border" />
 
             {/* Menu Items */}
-            <div className="p-2 flex flex-col">
-
-              <button onClick={onOpenProfile} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                <UserCircle size={16} className="text-gray-400" />
+            <div className="p-1.5 flex flex-col gap-0.5">
+              <button 
+                type="button"
+                onClick={onOpenProfile} 
+                className="w-full h-9 flex items-center gap-2.5 px-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-input transition-colors text-xs font-medium cursor-pointer group"
+              >
+                <UserCircle size={15} className="text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
                 <span>Profile</span>
               </button>
-              <button onClick={onOpenSettings} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                <Settings size={16} className="text-gray-400" />
+              <button 
+                type="button"
+                onClick={onOpenSettings} 
+                className="w-full h-9 flex items-center gap-2.5 px-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-input transition-colors text-xs font-medium cursor-pointer group"
+              >
+                <Settings size={15} className="text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
                 <span>Settings</span>
               </button>
             </div>
 
-            <div className="h-[1px] w-full bg-white/10" />
+            <div className="h-[1px] w-full bg-border" />
 
             {/* Bottom Menu Items */}
-            <div className="p-2 flex flex-col">
-              <button onClick={onOpenHelp} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                <HelpCircle size={16} className="text-gray-400" />
+            <div className="p-1.5 flex flex-col gap-0.5">
+              <button 
+                type="button"
+                onClick={onOpenHelp} 
+                className="w-full h-9 flex items-center gap-2.5 px-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-input transition-colors text-xs font-medium cursor-pointer group"
+              >
+                <HelpCircle size={15} className="text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
                 <span>Help</span>
               </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors group" onClick={() => { logout(); onClose(); }}>
-                <LogOut size={16} className="text-gray-400 group-hover:text-red-400" />
+              <button 
+                type="button"
+                className="w-full h-9 flex items-center gap-2.5 px-2.5 rounded-lg text-text-secondary hover:text-error hover:bg-error/10 transition-colors text-xs font-medium group cursor-pointer" 
+                onClick={() => { logout(); onClose(); }}
+              >
+                <LogOut size={15} className="text-text-muted group-hover:text-error transition-colors shrink-0" />
                 <span>Log out</span>
               </button>
             </div>

@@ -34,25 +34,20 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthCard
+      title="Reset Password"
+      subtitle="Enter your email address and we'll send you a link to reset your password"
       footer={
         <Link
           href="/login"
-          className="flex items-center gap-2 text-accent hover:text-accent hover:brightness-110 font-semibold transition-colors"
+          className="inline-flex items-center gap-1.5 text-accent hover:underline font-medium transition-colors"
         >
-          <ArrowLeft size={16} />
-          Back to Login
+          <ArrowLeft size={14} />
+          Back to login
         </Link>
       }
     >
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white mb-2">Reset Password</h2>
-        <p className="text-sm text-white/70">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           <AuthInput
             id="email"
             type="email"
@@ -70,16 +65,20 @@ export default function ForgotPasswordPage() {
         </div>
 
         {statusMsg && (
-          <p 
-            className={`text-sm text-center ${statusMsg.type === 'error' ? 'text-red-400' : 'text-green-400'}`} 
+          <div 
+            className={`p-3 rounded-xl border flex items-center justify-center text-center text-xs font-medium ${
+              statusMsg.type === 'error' 
+                ? 'bg-error/10 border-error/20 text-error' 
+                : 'bg-success/10 border-success/20 text-success'
+            }`} 
             role="alert"
           >
             {statusMsg.text}
-          </p>
+          </div>
         )}
 
         <AuthButton type="submit" disabled={loading}>
-          {loading ? "Sending link..." : "Send reset link"}
+          {loading ? "Sending link..." : "Send Reset Link"}
         </AuthButton>
       </form>
     </AuthCard>
