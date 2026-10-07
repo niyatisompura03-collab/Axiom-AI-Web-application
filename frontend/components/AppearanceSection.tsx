@@ -115,7 +115,7 @@ const AppearanceSection: React.FC<{ username: string }> = ({ username }) => {
             onChange={handleChange}
             className={styles.colorInput}
           />
-          <span className="text-sm text-gray-400 font-mono uppercase">{settings.accent_color}</span>
+          <span className="text-sm text-text-muted font-mono uppercase">{settings.accent_color}</span>
         </div>
       </div>
 

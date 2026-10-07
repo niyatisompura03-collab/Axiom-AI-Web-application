@@ -35,20 +35,22 @@ export default function LoginPage() {
 
   return (
     <AuthCard
+      title="Welcome back"
+      subtitle="Sign in to your account to continue"
       footer={
-        <>
+        <p className="text-xs text-text-secondary">
           Don't have an account?{" "}
           <Link
             href="/signup"
-            className="text-accent hover:text-accent hover:brightness-110 font-semibold underline underline-offset-4 hover:no-underline transition-all ml-1"
+            className="text-accent hover:underline font-medium ml-1 transition-colors"
           >
             Create account
           </Link>
-        </>
+        </p>
       }
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           <AuthInput
             id="username"
             type="text"
@@ -57,7 +59,11 @@ export default function LoginPage() {
             required
             placeholder="Enter your username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              if (localError) setLocalError(null);
+            }}
+            disabled={loading}
           />
 
           <AuthInput
@@ -68,12 +74,16 @@ export default function LoginPage() {
             required
             placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (localError) setLocalError(null);
+            }}
+            disabled={loading}
           />
-          <div className="flex justify-end -mt-2">
+          <div className="flex justify-end -mt-1">
             <Link 
               href="/forgot-password" 
-              className="text-xs text-accent hover:text-accent hover:brightness-110 font-medium transition-colors"
+              className="text-xs text-text-muted hover:text-accent font-medium transition-colors"
             >
               Forgot Password?
             </Link>
@@ -81,28 +91,28 @@ export default function LoginPage() {
         </div>
 
         {localError && (
-          <p className="text-sm text-red-400 text-center" role="alert">
+          <div className="p-3 rounded-xl bg-error/10 border border-error/20 flex items-center justify-center text-center text-xs text-error font-medium" role="alert">
             {localError}
-          </p>
+          </div>
         )}
 
         <AuthButton type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Signing in..." : "Sign In"}
         </AuthButton>
         
-        <div className="flex items-center gap-4 my-2">
-          <div className="h-px bg-white/10 flex-1"></div>
-          <span className="text-xs text-white/50 uppercase font-medium">Or</span>
-          <div className="h-px bg-white/10 flex-1"></div>
+        <div className="flex items-center gap-3 my-1">
+          <div className="h-px bg-border flex-1"></div>
+          <span className="text-[11px] text-text-muted uppercase font-medium tracking-wider">Or</span>
+          <div className="h-px bg-border flex-1"></div>
         </div>
         
         <button
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 text-white rounded-xl py-3.5 transition-all border border-white/10 font-medium disabled:opacity-50"
+          className="w-full h-11 flex items-center justify-center gap-3 bg-surface hover:bg-surface-secondary text-text-primary rounded-xl transition-all duration-200 border border-border hover:border-text-muted/30 text-sm font-medium active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-elevation"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18px" height="18px">
             <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
             <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
             <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>

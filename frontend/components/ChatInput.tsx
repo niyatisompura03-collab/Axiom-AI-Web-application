@@ -70,8 +70,8 @@ export default function ChatInput({
       flex-col
       rounded-2xl
       border
-      border-white/10
-      bg-white/[0.02]
+      border-border
+      bg-surface-input
       px-6
       py-3.5
       md:px-7
@@ -79,124 +79,133 @@ export default function ChatInput({
       shadow-lg
       transition-all
       duration-300
-      focus-within:border-purple-500/50
-      focus-within:bg-white/[0.04]
-      focus-within:shadow-[0_0_30px_var(--accent-color)]
+      focus-within:border-accent
+      focus-within:bg-surface
+      focus-within:shadow-focus
       backdrop-blur-xl
       ">
         
         {/* Document Pill inside composer */}
         {activeDocument && (
-          <div className="flex items-center gap-2 bg-purple-500/20 text-purple-200 px-3 py-1.5 rounded-xl w-max border border-purple-500/30">
-            <Paperclip size={14} />
-            <span className="text-sm font-medium truncate max-w-[200px]">{activeDocument.filename}</span>
-            <button onClick={() => setActiveDocument(null)} className="hover:text-white transition-colors ml-1">
+          <div className="flex items-center gap-2 bg-accent-subtle text-accent px-3 py-1.5 rounded-xl w-max border border-accent/30 text-sm font-medium">
+            <Paperclip size={14} className="shrink-0" />
+            <span className="truncate max-w-[200px]">{activeDocument.filename}</span>
+            <button 
+              type="button"
+              onClick={() => setActiveDocument(null)} 
+              aria-label="Remove document"
+              className="hover:text-text-primary transition-colors ml-1 p-0.5 rounded cursor-pointer"
+            >
               <X size={14} />
             </button>
           </div>
         )}
 
-        <div className="flex items-end w-full">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="
-            mr-2
-            mb-1.5
-            p-2
-            rounded-xl
-            text-gray-400
-            hover:text-accent
-            hover:bg-white/5
-            transition-colors
-            disabled:opacity-50
-            flex-shrink-0
-          "
-        >
-          {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Paperclip size={20} />}
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileUpload}
-          accept=".pdf,.docx,.txt,.md,.html,.csv,.json,.png,.jpg,.jpeg,.webp"
-        />
+        <div className="flex items-end w-full gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            aria-label="Attach file"
+            className="
+              w-10
+              h-10
+              flex
+              items-center
+              justify-center
+              rounded-xl
+              text-text-secondary
+              hover:text-text-primary
+              hover:bg-surface-secondary
+              transition-colors
+              duration-200
+              disabled:opacity-50
+              shrink-0
+              cursor-pointer
+            "
+          >
+            {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Paperclip size={18} />}
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileUpload}
+            accept=".pdf,.docx,.txt,.md,.html,.csv,.json,.png,.jpg,.jpeg,.webp"
+          />
 
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.min(e.target.scrollHeight, 300) + 'px';
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (input.trim()) {
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 300) + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (input.trim()) {
+                  sendMessage();
+                }
+              }
+            }}
+            rows={1}
+            className="
+              flex-1
+              bg-transparent
+              outline-none
+              text-text-primary
+              placeholder:text-text-muted
+              transition-all
+              duration-200
+              focus:placeholder:opacity-50
+              px-2
+              py-2.5
+              resize-none
+              overflow-y-auto
+              max-h-[300px]
+              min-h-[40px]
+              text-sm
+              leading-relaxed
+              break-words
+              [overflow-wrap:anywhere]
+            "
+            placeholder="Ask Axiom anything..."
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (input.trim() && !isUploading) {
                 sendMessage();
               }
-            }
-          }}
-          rows={1}
-          className="
-          flex-1
-          bg-transparent
-          outline-none
-          text-white
-          placeholder:text-gray-400
-          transition-all
-          duration-300
-          focus:placeholder:opacity-50
-          px-3
-          resize-none
-          overflow-y-auto
-          max-h-[300px]
-          py-2.5
-          min-h-[44px]
-          break-words
-          [overflow-wrap:anywhere]
-          "
-          placeholder="Ask Axiom anything..."
-        />
-
-        <button
-          onClick={() => {
-            if (input.trim() && !isUploading) {
-              sendMessage();
-            }
-          }}
-          disabled={!input.trim() || isUploading}
-          className="
-          ml-3
-          mb-0.5
-          flex
-          items-center
-          justify-center
-          h-10
-          w-10
-          shrink-0
-          rounded-xl
-          bg-gradient-to-br
-          from-accent
-          to-accent/70
-          text-white
-          transition-all
-          duration-300
-          hover:scale-[1.03]
-          hover:brightness-110
-          hover:shadow-[0_0_20px_var(--accent-color)]
-          disabled:opacity-50
-          disabled:cursor-not-allowed
-          disabled:hover:scale-100
-          disabled:hover:shadow-none
-          disabled:hover:brightness-100
-          "
-        >
-          <Send size={16} className="ml-0.5" />
-        </button>
+            }}
+            disabled={!input.trim() || isUploading}
+            aria-label="Send message"
+            className="
+              w-10
+              h-10
+              flex
+              items-center
+              justify-center
+              shrink-0
+              rounded-xl
+              bg-accent
+              hover:bg-accent-hover
+              text-white
+              shadow-elevation
+              transition-all
+              duration-200
+              active:scale-95
+              disabled:opacity-40
+              disabled:cursor-not-allowed
+              disabled:active:scale-100
+              cursor-pointer
+            "
+          >
+            <Send size={16} className="ml-0.5" />
+          </button>
         </div>
       </div>
     </div>

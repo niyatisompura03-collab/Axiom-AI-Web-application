@@ -45,37 +45,37 @@ export default function HelpModal({ open, onClose }: HelpModalProps) {
             </button>
           </div>
           <div className={styles.contentBody} style={{ padding: "1.5rem 2rem 2rem" }}>
-            <div className="space-y-6 text-gray-300 text-sm">
+            <div className="space-y-6 text-text-secondary text-sm">
               <section>
-                <h3 className="text-white text-base font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-text-primary text-base font-semibold mb-2 flex items-center gap-2">
                   <Info size={16} className="text-accent" /> What is Axiom?
                 </h3>
                 <p>Axiom is an advanced AI chat interface designed for seamless conversations, persistent memory, and a customizable dark-themed experience.</p>
               </section>
 
               <section>
-                <h3 className="text-white text-base font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-text-primary text-base font-semibold mb-2 flex items-center gap-2">
                   <MessageSquare size={16} className="text-accent" /> Chat Features
                 </h3>
                 <p>Use the sidebar to create new chats, switch between recent conversations, rename them, or delete them. Axiom streams responses in real time.</p>
               </section>
 
               <section>
-                <h3 className="text-white text-base font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-text-primary text-base font-semibold mb-2 flex items-center gap-2">
                   <Database size={16} className="text-accent" /> Memory
                 </h3>
                 <p>Axiom can remember details about you across sessions. You can manage or clear this saved context in Settings &gt; Memory.</p>
               </section>
 
               <section>
-                <h3 className="text-white text-base font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-text-primary text-base font-semibold mb-2 flex items-center gap-2">
                   <Settings size={16} className="text-accent" /> Settings
                 </h3>
                 <p>Access Settings via the Profile menu to customize appearance (themes), AI behavior (system prompts), and Memory preferences.</p>
               </section>
 
               <section>
-                <h3 className="text-white text-base font-semibold mb-2 flex items-center gap-2">
+                <h3 className="text-text-primary text-base font-semibold mb-2 flex items-center gap-2">
                   <User size={16} className="text-accent" /> Profile & Account
                 </h3>
                 <p>Your profile displays your current account details. Use the Log Out button in the Profile menu to end your session securely.</p>

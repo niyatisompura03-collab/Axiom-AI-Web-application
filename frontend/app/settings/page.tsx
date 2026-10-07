@@ -12,7 +12,7 @@ export default function SettingsPage() {
   const username = user?.username ?? "";
   return (
     <div className="p-6 space-y-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-white">Settings</h1>
+      <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
       <AppearanceSection username={username} />
       <AISection username={username} />
       <MemorySection username={username} />

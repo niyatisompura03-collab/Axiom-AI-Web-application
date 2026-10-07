@@ -69,13 +69,14 @@ export default function ChatWindow({
       >
         {messages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center h-full min-h-[50vh]">
-                <div className="w-16 h-16 md:w-20 md:h-20 mb-6 rounded-2xl flex items-center justify-center bg-violet-950/40 border border-accent/30 shadow-[0_0_20px_var(--accent-color)]">
-                  <img src="/axiom-icon.png" alt="Axiom" className="w-10 h-10 md:w-12 md:h-12 object-contain filter drop-shadow-[0_0_8px_var(--accent-color)]" />
+                <div className="w-16 h-16 md:w-20 md:h-20 mb-6 rounded-2xl flex items-center justify-center bg-surface-secondary border border-border shadow-elevation">
+                  <img src="/brand/axiom-mark-white.png" alt="Axiom" className="w-10 h-10 md:w-12 md:h-12 object-contain dark-logo" />
+                  <img src="/brand/axiom-mark-black.png" alt="Axiom" className="w-10 h-10 md:w-12 md:h-12 object-contain light-logo" />
                 </div>
-                <h3 className="text-2xl md:text-3xl text-gray-200 mb-3 font-semibold tracking-wide">
+                <h3 className="text-2xl md:text-3xl text-text-primary mb-3 font-semibold tracking-wide">
                   {isAuthenticated ? `Welcome back, ${user?.username}` : "Welcome to Axiom"}
                 </h3>
-                <p className="text-gray-400 text-base md:text-lg max-w-md">How can I help you today?</p>
+                <p className="text-text-secondary text-base md:text-lg max-w-md">How can I help you today?</p>
             </div>
         ) : (
             <div className="flex-1 flex flex-col gap-6 md:gap-8">
@@ -98,13 +99,15 @@ export default function ChatWindow({
       <AnimatePresence>
         {showScroll && messages.length > 0 && (
           <motion.button
+            type="button"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             onClick={scrollToBottom}
-            className="fixed bottom-28 right-12 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full shadow-[0_0_15px_rgba(80,100,255,.2)] transition-all z-10 text-white"
+            aria-label="Scroll to bottom"
+            className="fixed bottom-28 right-12 w-10 h-10 flex items-center justify-center bg-surface-secondary/90 hover:bg-surface backdrop-blur-md border border-border text-text-secondary hover:text-text-primary rounded-xl shadow-elevation transition-all duration-200 z-10 active:scale-95 cursor-pointer"
           >
-            <ArrowDown size={20} />
+            <ArrowDown size={18} />
           </motion.button>
         )}
       </AnimatePresence>

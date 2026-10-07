@@ -21,9 +21,11 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="flex flex-col items-center justify-center text-center gap-4 py-8">
-        <p className="text-red-400 font-medium">Invalid or missing reset token.</p>
-        <Link href="/forgot-password" className="text-accent hover:text-accent hover:brightness-110 font-medium transition-colors">
+      <div className="flex flex-col items-center justify-center text-center gap-3 py-2">
+        <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-xs text-error font-medium w-full text-center" role="alert">
+          Invalid or missing reset token.
+        </div>
+        <Link href="/forgot-password" className="text-xs text-accent hover:underline font-medium transition-colors">
           Request a new link
         </Link>
       </div>
@@ -60,71 +62,68 @@ function ResetPasswordForm() {
   };
 
   return (
-    <>
-      <div className="mb-6 text-center">
-        <h2 className="text-xl font-bold text-white mb-2">Create New Password</h2>
-        <p className="text-sm text-white/70">
-          Please enter your new password below.
-        </p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3.5">
+        <AuthInput
+          id="password"
+          type="password"
+          label="New Password"
+          icon={Lock}
+          required
+          placeholder="Enter new password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading || statusMsg?.type === 'success'}
+        />
+        <AuthInput
+          id="confirmPassword"
+          type="password"
+          label="Confirm New Password"
+          icon={Lock}
+          required
+          placeholder="Confirm new password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={loading || statusMsg?.type === 'success'}
+        />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="flex flex-col gap-4">
-          <AuthInput
-            id="password"
-            type="password"
-            label="New Password"
-            icon={Lock}
-            required
-            placeholder="Enter new password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading || statusMsg?.type === 'success'}
-          />
-          <AuthInput
-            id="confirmPassword"
-            type="password"
-            label="Confirm New Password"
-            icon={Lock}
-            required
-            placeholder="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={loading || statusMsg?.type === 'success'}
-          />
+      {statusMsg && (
+        <div 
+          className={`p-3 rounded-xl border flex items-center justify-center text-center text-xs font-medium ${
+            statusMsg.type === 'error' 
+              ? 'bg-error/10 border-error/20 text-error' 
+              : 'bg-success/10 border-success/20 text-success'
+          }`} 
+          role="alert"
+        >
+          {statusMsg.text}
         </div>
+      )}
 
-        {statusMsg && (
-          <p 
-            className={`text-sm text-center ${statusMsg.type === 'error' ? 'text-red-400' : 'text-green-400'}`} 
-            role="alert"
-          >
-            {statusMsg.text}
-          </p>
-        )}
-
-        <AuthButton type="submit" disabled={loading || statusMsg?.type === 'success'}>
-          {loading ? "Resetting..." : "Reset Password"}
-        </AuthButton>
-      </form>
-    </>
+      <AuthButton type="submit" disabled={loading || statusMsg?.type === 'success'}>
+        {loading ? "Resetting..." : "Reset Password"}
+      </AuthButton>
+    </form>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
     <AuthCard
+      title="Create New Password"
+      subtitle="Please enter your new password below"
       footer={
         <Link
           href="/login"
-          className="flex items-center gap-2 text-accent hover:text-accent hover:brightness-110 font-semibold transition-colors"
+          className="inline-flex items-center gap-1.5 text-accent hover:underline font-medium transition-colors"
         >
-          <ArrowLeft size={16} />
-          Back to Login
+          <ArrowLeft size={14} />
+          Back to login
         </Link>
       }
     >
-      <Suspense fallback={<div className="text-center text-white/50">Loading...</div>}>
+      <Suspense fallback={<div className="text-center text-text-muted text-xs py-4">Loading...</div>}>
         <ResetPasswordForm />
       </Suspense>
     </AuthCard>
