@@ -62,7 +62,7 @@ export default function ChatInput({
   }, [input]);
 
   return (
-    <div className="px-6 md:px-10 pb-6 md:pb-8 pt-2 w-full shrink-0 relative">
+    <div className="px-3 sm:px-6 md:px-10 pb-3 sm:pb-6 md:pb-8 pt-1.5 sm:pt-2 w-full shrink-0 relative">
 
       <div className="
       w-full
@@ -72,9 +72,11 @@ export default function ChatInput({
       border
       border-border
       bg-surface-input
-      px-6
-      py-3.5
+      px-3.5
+      sm:px-6
       md:px-7
+      py-2.5
+      sm:py-3.5
       gap-2
       shadow-lg
       transition-all
@@ -87,9 +89,9 @@ export default function ChatInput({
         
         {/* Document Pill inside composer */}
         {activeDocument && (
-          <div className="flex items-center gap-2 bg-accent-subtle text-accent px-3 py-1.5 rounded-xl w-max border border-accent/30 text-sm font-medium">
+          <div className="flex items-center gap-2 bg-accent-subtle text-accent px-3 py-1.5 rounded-xl w-max max-w-full border border-accent/30 text-sm font-medium">
             <Paperclip size={14} className="shrink-0" />
-            <span className="truncate max-w-[200px]">{activeDocument.filename}</span>
+            <span className="truncate max-w-[140px] sm:max-w-[220px]">{activeDocument.filename}</span>
             <button 
               type="button"
               onClick={() => setActiveDocument(null)} 
@@ -101,15 +103,17 @@ export default function ChatInput({
           </div>
         )}
 
-        <div className="flex items-end w-full gap-2">
+        <div className="flex items-end w-full gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             aria-label="Attach file"
             className="
-              w-10
-              h-10
+              w-9
+              h-9
+              sm:w-10
+              sm:h-10
               flex
               items-center
               justify-center
@@ -124,7 +128,7 @@ export default function ChatInput({
               cursor-pointer
             "
           >
-            {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Paperclip size={18} />}
+            {isUploading ? <Loader2 size={17} className="animate-spin" /> : <Paperclip size={17} />}
           </button>
           <input
             type="file"
@@ -160,12 +164,15 @@ export default function ChatInput({
               transition-all
               duration-200
               focus:placeholder:opacity-50
-              px-2
-              py-2.5
+              px-1.5
+              sm:px-2
+              py-2
+              sm:py-2.5
               resize-none
               overflow-y-auto
               max-h-[300px]
-              min-h-[40px]
+              min-h-[36px]
+              sm:min-h-[40px]
               text-sm
               leading-relaxed
               break-words
@@ -184,8 +191,10 @@ export default function ChatInput({
             disabled={!input.trim() || isUploading}
             aria-label="Send message"
             className="
-              w-10
-              h-10
+              w-9
+              h-9
+              sm:w-10
+              sm:h-10
               flex
               items-center
               justify-center
@@ -204,7 +213,7 @@ export default function ChatInput({
               cursor-pointer
             "
           >
-            <Send size={16} className="ml-0.5" />
+            <Send size={15} className="ml-0.5" />
           </button>
         </div>
       </div>

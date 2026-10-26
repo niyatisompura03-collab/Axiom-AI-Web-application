@@ -84,8 +84,10 @@ export default function MessageBubble({
       {!isUser && (
         <div
           className="
-            w-8
-            h-8
+            w-7
+            h-7
+            sm:w-8
+            sm:h-8
             md:w-9
             md:h-9
             rounded-xl
@@ -114,7 +116,7 @@ export default function MessageBubble({
       )}
 
       {/* Bubble Container */}
-      <div className={`flex flex-col min-w-0 ${isUser ? "items-end max-w-[85%] md:max-w-[75%]" : "items-start max-w-[90%] md:max-w-[85%]"}`}>
+      <div className={`flex flex-col min-w-0 ${isUser ? "items-end max-w-[88%] sm:max-w-[82%] md:max-w-[75%]" : "items-start max-w-[92%] sm:max-w-[88%] md:max-w-[85%]"}`}>
         <div
           className={`
             w-fit
@@ -123,10 +125,12 @@ export default function MessageBubble({
             break-words
             [overflow-wrap:anywhere]
             rounded-2xl
-            px-4
+            px-3.5
             py-3
-            md:px-4.5
-            md:py-3.5
+            sm:px-5
+            sm:py-4
+            md:px-6
+            md:py-5
             border
             backdrop-blur-xl
             transition-all
@@ -142,9 +146,11 @@ export default function MessageBubble({
                   rounded-br-sm
                 `
                 : `
-                  bg-transparent
-                  border-transparent
+                  bg-surface
+                  border-border
                   text-text-primary
+                  shadow-elevation
+                  rounded-bl-sm
                 `
             }
           `}
@@ -171,7 +177,7 @@ export default function MessageBubble({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 bg-surface-input border border-border px-3 py-2 rounded-xl text-sm max-w-[250px] md:max-w-[350px]">
+                <div className="flex items-center gap-2 bg-surface-input border border-border px-3 py-2 rounded-xl text-sm max-w-[200px] sm:max-w-[280px] md:max-w-[350px]">
                   <FileText size={16} className="text-accent shrink-0" />
                   <span className="truncate opacity-90">{document.filename}</span>
                 </div>
@@ -270,8 +276,10 @@ export default function MessageBubble({
       {isUser && (
         <div
           className="
-            w-8
-            h-8
+            w-7
+            h-7
+            sm:w-8
+            sm:h-8
             md:w-9
             md:h-9
             rounded-xl

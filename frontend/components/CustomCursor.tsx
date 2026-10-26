@@ -11,7 +11,10 @@ export default function CustomCursor() {
     if (isTouch || isReducedMotion) return;
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.warn("CustomCursor: Canvas not found");
+      return;
+    }
 
     let animationFrameId: number;
     let pointers: any[] = [];
@@ -68,8 +71,12 @@ export default function CustomCursor() {
     }
     pointers.push(pointerPrototype());
 
-    const { gl, ext } = getWebGLContext(canvas);
-    if (!gl || !ext) return;
+    const contextResult = getWebGLContext(canvas);
+    if (!contextResult || !contextResult.gl || !contextResult.ext) {
+      console.warn("CustomCursor: WebGL not supported or initialization failed");
+      return;
+    }
+    const { gl, ext } = contextResult;
 
     function getWebGLContext(canvas: HTMLCanvasElement) {
       const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
@@ -584,13 +591,17 @@ export default function CustomCursor() {
       const rg = ext.formatRG;
       const r = ext.formatR;
       const filtering = ext.supportLinearFiltering ? gl.LINEAR : gl.NEAREST;
-      if (!dye) dye = createDoubleFBO(dyeRes.width, dyeRes.height, rgba!.internalFormat, rgba!.format, texType, filtering);
-      else dye = resizeDoubleFBO(dye, dyeRes.width, dyeRes.height, rgba!.internalFormat, rgba!.format, texType, filtering);
-      if (!velocity) velocity = createDoubleFBO(simRes.width, simRes.height, rg!.internalFormat, rg!.format, texType, filtering);
-      else velocity = resizeDoubleFBO(velocity, simRes.width, simRes.height, rg!.internalFormat, rg!.format, texType, filtering);
-      divergence = createFBO(simRes.width, simRes.height, r!.internalFormat, r!.format, texType, gl.NEAREST);
-      curl = createFBO(simRes.width, simRes.height, r!.internalFormat, r!.format, texType, gl.NEAREST);
-      pressure = createDoubleFBO(simRes.width, simRes.height, r!.internalFormat, r!.format, texType, gl.NEAREST);
+      if (!rgba || !rg || !r) {
+        console.warn("CustomCursor: Required texture formats not supported");
+        return;
+      }
+      if (!dye) dye = createDoubleFBO(dyeRes.width, dyeRes.height, rgba.internalFormat, rgba.format, texType, filtering);
+      else dye = resizeDoubleFBO(dye, dyeRes.width, dyeRes.height, rgba.internalFormat, rgba.format, texType, filtering);
+      if (!velocity) velocity = createDoubleFBO(simRes.width, simRes.height, rg.internalFormat, rg.format, texType, filtering);
+      else velocity = resizeDoubleFBO(velocity, simRes.width, simRes.height, rg.internalFormat, rg.format, texType, filtering);
+      divergence = createFBO(simRes.width, simRes.height, r.internalFormat, r.format, texType, gl.NEAREST);
+      curl = createFBO(simRes.width, simRes.height, r.internalFormat, r.format, texType, gl.NEAREST);
+      pressure = createDoubleFBO(simRes.width, simRes.height, r.internalFormat, r.format, texType, gl.NEAREST);
     }
 
     function resizeDoubleFBO(target: any, w: number, h: number, internalFormat: any, format: any, type: any, param: any) {
@@ -641,16 +652,25 @@ export default function CustomCursor() {
 
     let lastUpdateTime = Date.now();
     let colorUpdateTimer = 0.0;
-    initFramebuffers();
+    try {
+      initFramebuffers();
+    } catch (e) {
+      console.warn("CustomCursor: Failed to init framebuffers", e);
+      return;
+    }
 
     function update() {
-      const dt = calcDeltaTime();
-      if (resizeCanvas()) initFramebuffers();
-      updateColors(dt);
-      applyInputs();
-      step(dt);
-      render(null);
-      animationFrameId = requestAnimationFrame(update);
+      try {
+        const dt = calcDeltaTime();
+        if (resizeCanvas()) initFramebuffers();
+        updateColors(dt);
+        applyInputs();
+        step(dt);
+        render(null);
+        animationFrameId = requestAnimationFrame(update);
+      } catch (e) {
+        console.warn("CustomCursor: Render loop error", e);
+      }
     }
 
     function calcDeltaTime() {

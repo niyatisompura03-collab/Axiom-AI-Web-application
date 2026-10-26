@@ -7,11 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   Plus, 
   MessageSquare, 
-  Settings, 
   Trash2, 
   User, 
-  PanelLeftClose, 
-  PanelLeftOpen,
   Edit2,
   Check,
   X
@@ -36,6 +33,16 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [avatarError, setAvatarError] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     setAvatarError(false);
@@ -69,43 +76,43 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
   return (
     <>
+      {/* Mobile Drawer Backdrop */}
+      <AnimatePresence>
+        {isMobile && isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       <motion.div
-        animate={{ width: isOpen ? 260 : 68 }}
+        animate={isMobile ? { x: isOpen ? 0 : "-100%", width: 280 } : { x: 0, width: isOpen ? 260 : 68 }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
-        className="h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden relative z-20"
+        className={`h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden ${
+          isMobile ? "fixed inset-y-0 left-0 z-40 max-w-[85vw] shadow-2xl" : "relative z-20"
+        }`}
       >
         {/* Top Header */}
         {isOpen ? (
           <div className="h-16 px-4 flex items-center justify-between border-b border-border shrink-0">
-            <div className="flex items-center gap-2.5">
-              <img 
-                src="/brand/axiom-mark-white.png" 
-                alt="Axiom" 
-                className="h-6 w-auto object-contain shrink-0 dark-logo" 
-              />
-              <img 
-                src="/brand/axiom-mark-black.png" 
-                alt="Axiom" 
-                className="h-6 w-auto object-contain shrink-0 light-logo" 
-              />
-              <img 
-                src="/brand/axiom-wordmark-white.png" 
-                alt="AXIOM" 
-                className="h-4.5 w-auto object-contain dark-logo" 
-              />
-              <img 
-                src="/brand/axiom-wordmark-black.png" 
-                alt="AXIOM" 
-                className="h-4.5 w-auto object-contain light-logo" 
-              />
+            <div className="flex items-center gap-2">
+              <img src="/brand/axiom-wordmark-white.png" alt="Axiom" className="h-4 w-auto object-contain dark-logo" />
+              <img src="/brand/axiom-wordmark-black.png" alt="Axiom" className="h-4 w-auto object-contain light-logo" />
             </div>
             <button
               onClick={() => setIsOpen(false)}
               aria-label="Collapse sidebar"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-input transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-input transition-colors cursor-pointer group"
               title="Collapse sidebar"
             >
-              <PanelLeftClose size={17} />
+              <X size={18} className="md:hidden text-text-secondary group-hover:text-text-primary" />
+              <img src="/brand/axiom-mark-white.png" alt="Collapse sidebar" className="hidden md:block h-5 w-auto object-contain dark-logo group-hover:scale-105 transition-transform" />
+              <img src="/brand/axiom-mark-black.png" alt="Collapse sidebar" className="hidden md:block h-5 w-auto object-contain light-logo group-hover:scale-105 transition-transform" />
             </button>
           </div>
         ) : (
@@ -113,20 +120,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             <button
               onClick={() => setIsOpen(true)}
               aria-label="Expand sidebar"
+              className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-surface-input transition-colors cursor-pointer group"
               title="Expand sidebar"
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-input transition-colors group cursor-pointer relative"
             >
-              <img 
-                src="/brand/axiom-mark-white.png" 
-                alt="Axiom" 
-                className="h-5.5 w-auto object-contain group-hover:opacity-0 transition-opacity dark-logo" 
-              />
-              <img 
-                src="/brand/axiom-mark-black.png" 
-                alt="Axiom" 
-                className="h-5.5 w-auto object-contain group-hover:opacity-0 transition-opacity light-logo" 
-              />
-              <PanelLeftOpen size={18} className="absolute opacity-0 group-hover:opacity-100 text-accent transition-opacity" />
+              <img src="/brand/axiom-mark-white.png" alt="Expand sidebar" className="h-5 w-auto object-contain dark-logo group-hover:scale-105 transition-transform" />
+              <img src="/brand/axiom-mark-black.png" alt="Expand sidebar" className="h-5 w-auto object-contain light-logo group-hover:scale-105 transition-transform" />
             </button>
           </div>
         )}
@@ -135,19 +133,25 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <div className={`p-3 shrink-0 ${isOpen ? '' : 'flex justify-center'}`}>
           {isOpen ? (
             <button
-              onClick={() => startNewChat()}
-              className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-border bg-surface-input hover:bg-surface hover:border-accent/40 text-text-primary font-medium text-xs transition-all duration-150 active:scale-[0.99] group cursor-pointer shadow-elevation"
+              onClick={() => {
+                startNewChat();
+                if (isMobile) setIsOpen(false);
+              }}
+              className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-border bg-surface-input hover:bg-surface hover:border-accent/40 text-text-primary font-medium text-xs transition-all duration-150 active:scale-[0.99] group cursor-pointer"
             >
-              <Plus size={15} className="text-accent group-hover:scale-110 transition-transform shrink-0" />
+              <Plus size={15} className="text-white [.light_&]:text-black plus-icon-themed group-hover:scale-110 transition-transform shrink-0" />
               <span>New Chat</span>
             </button>
           ) : (
             <button
-              onClick={() => startNewChat()}
-              className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-surface-input hover:bg-surface hover:border-accent/40 text-text-primary transition-all duration-150 active:scale-[0.98] group shrink-0 cursor-pointer shadow-elevation"
+              onClick={() => {
+                startNewChat();
+                if (isMobile) setIsOpen(false);
+              }}
+              className="w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-surface-input hover:bg-surface hover:border-accent/40 text-text-primary transition-all duration-150 active:scale-[0.98] group shrink-0 cursor-pointer"
               title="New Chat"
             >
-              <Plus size={16} className="text-accent group-hover:scale-110 transition-transform" />
+              <Plus size={16} className="text-white [.light_&]:text-black plus-icon-themed group-hover:scale-110 transition-transform" />
             </button>
           )}
         </div>
@@ -167,7 +171,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             return isOpen ? (
               <div
                 key={conv.conversation_id}
-                onClick={() => !isEditing && loadConversation(conv.conversation_id)}
+                onClick={() => {
+                  if (!isEditing) {
+                    loadConversation(conv.conversation_id);
+                    if (isMobile) setIsOpen(false);
+                  }
+                }}
                 className={`w-full min-h-[36px] flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-left transition-colors duration-150 group cursor-pointer border ${
                   isActive 
                     ? "bg-accent-subtle/80 text-text-primary font-medium border-accent/25" 
@@ -245,7 +254,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             ) : (
               <button
                 key={conv.conversation_id}
-                onClick={() => loadConversation(conv.conversation_id)}
+                onClick={() => {
+                  loadConversation(conv.conversation_id);
+                  if (isMobile) setIsOpen(false);
+                }}
                 className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-150 group shrink-0 border cursor-pointer ${
                   isActive 
                     ? "bg-accent-subtle/80 text-accent border-accent/25" 
@@ -272,14 +284,13 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                     {user?.avatar && !avatarError ? (
                       <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                     ) : (
-                      <User size={15} />
+                      <img src="/user-avatar.png" alt="User Avatar" className="w-full h-full object-contain p-1" />
                     )}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-xs font-medium text-text-primary truncate">{user?.username}</span>
                     <span className="text-[10px] text-text-muted font-normal">Free Plan</span>
                   </div>
-                  <Settings size={14} className="text-text-muted group-hover:text-text-primary transition-colors shrink-0 ml-auto" />
                 </div>
               ) : (
                 <div className="w-full flex flex-col gap-2">
@@ -295,12 +306,14 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   <div className="flex gap-2 w-full">
                     <Link 
                       href="/login" 
+                      onClick={() => { if (isMobile) setIsOpen(false); }}
                       className="flex-1 h-8.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-medium flex items-center justify-center transition-colors"
                     >
                       Log in
                     </Link>
                     <Link 
                       href="/signup" 
+                      onClick={() => { if (isMobile) setIsOpen(false); }}
                       className="flex-1 h-8.5 rounded-xl bg-surface hover:bg-surface-input border border-border text-text-primary text-xs font-medium flex items-center justify-center transition-colors"
                     >
                       Sign up
@@ -321,7 +334,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   {user?.avatar && !avatarError ? (
                     <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                   ) : (
-                    <User size={16} className="text-text-secondary" />
+                    <img src="/user-avatar.png" alt="User Avatar" className="w-full h-full object-contain p-1" />
                   )}
                 </button>
               ) : (
@@ -359,9 +372,9 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       <ProfileDropdown 
         isOpen={isProfileDropdownOpen} 
         onClose={() => setIsProfileDropdownOpen(false)} 
-        onOpenProfile={() => { setShowProfile(true); setIsProfileDropdownOpen(false); }}
-        onOpenSettings={() => { setShowSettings(true); setIsProfileDropdownOpen(false); }}
-        onOpenHelp={() => { setShowHelp(true); setIsProfileDropdownOpen(false); }}
+        onOpenProfile={() => { setShowProfile(true); setIsProfileDropdownOpen(false); if (isMobile) setIsOpen(false); }}
+        onOpenSettings={() => { setShowSettings(true); setIsProfileDropdownOpen(false); if (isMobile) setIsOpen(false); }}
+        onOpenHelp={() => { setShowHelp(true); setIsProfileDropdownOpen(false); if (isMobile) setIsOpen(false); }}
       />
     </>
   );

@@ -187,7 +187,10 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
 
   return createPortal(
     <div className={backdropClass} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: "450px", minHeight: "auto" }}>
+      <div 
+        className={`${styles.modal} w-[95%] sm:w-[90%] max-w-[450px] min-h-0 max-h-[90dvh]`} 
+        onClick={e => e.stopPropagation()}
+      >
         
         <div className={styles.mainContent}>
           <div className={styles.contentHeader}>
@@ -196,14 +199,14 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
               <X size={20} />
             </button>
           </div>
-          <div className={styles.contentBody} style={{ padding: "2rem" }}>
+          <div className={`${styles.contentBody} p-4 sm:p-6 md:p-7 overflow-y-auto`}>
             
             <div className="flex flex-col items-center justify-center mb-6 relative">
               <div className="w-24 h-24 rounded-full bg-accent flex items-center justify-center text-white shadow-elevation mb-4 overflow-hidden border-2 border-border">
                 {(isEditing ? editForm.avatar : user?.avatar) && !avatarError ? (
                   <img src={isEditing ? editForm.avatar : user?.avatar || ""} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                 ) : (
-                  <User size={48} />
+                  <img src="/user-avatar.png" alt="User Avatar" className="w-full h-full object-contain p-2" />
                 )}
               </div>
               <h3 className="text-xl font-bold text-text-primary">{isEditing ? editForm.username : user?.username}</h3>
@@ -214,7 +217,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                   type="button"
                   onClick={() => setIsEditing(true)}
                   aria-label="Edit Profile"
-                  className="absolute top-0 right-0 w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary bg-surface-secondary hover:bg-surface border border-border transition-colors cursor-pointer"
+                  className="absolute top-0 right-0 w-8 h-8 rounded-xl flex items-center justify-center text-text-secondary hover:text-accent bg-surface-secondary hover:bg-accent-subtle hover:border-accent/40 border border-border transition-colors cursor-pointer"
                   title="Edit Profile"
                 >
                   <Edit2 size={15} />
@@ -267,7 +270,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                       {editForm.avatar && !avatarError ? (
                         <img src={editForm.avatar} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} />
                       ) : (
-                        <User size={32} />
+                        <img src="/user-avatar.png" alt="User Avatar" className="w-full h-full object-contain p-1" />
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
@@ -342,12 +345,12 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
             </div>
 
             {isEditing && (
-              <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+              <div className="flex flex-wrap items-center justify-end gap-2.5 sm:gap-3 mt-6 pt-4 border-t border-border">
                 <button
                   type="button"
                   onClick={handleCancel}
                   disabled={saving}
-                  className="h-10 px-4 rounded-xl text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary border border-transparent hover:border-border transition-colors cursor-pointer"
+                  className="h-10 px-4 rounded-xl text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-surface-secondary border border-transparent hover:border-border transition-colors cursor-pointer flex-1 sm:flex-initial justify-center"
                 >
                   Cancel
                 </button>
@@ -355,7 +358,7 @@ export default function ProfileModal({ open, onClose }: ProfileModalProps) {
                   type="button"
                   onClick={handleSave}
                   disabled={saving || !editForm.username.trim()}
-                  className="h-10 flex items-center gap-2 px-5 rounded-xl text-sm font-medium text-white bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation active:scale-[0.98] cursor-pointer"
+                  className="h-10 flex items-center justify-center gap-2 px-5 rounded-xl text-sm font-medium text-white bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-elevation active:scale-[0.98] cursor-pointer flex-1 sm:flex-initial"
                 >
                   {saving ? "Saving..." : (
                     <>

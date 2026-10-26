@@ -42,3 +42,13 @@
   font-weight: 500;
   border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
+
+@media (max-width: 600px) {
+  .field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 0;
+  }
+}
+

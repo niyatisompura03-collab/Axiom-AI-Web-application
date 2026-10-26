@@ -40,7 +40,7 @@
   --color-text-secondary: #475569;
   --color-text-muted: #94a3b8;
 
-  --shadow-elevation: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --shadow-elevation: 0 2px 10px rgba(0, 0, 0, 0.04);
   --shadow-focus: 0 0 0 2px color-mix(in srgb, var(--accent-color, #4aa8ff) 40%, transparent);
 }
 
@@ -50,6 +50,15 @@
 .light-logo { display: none; }
 .light .light-logo { display: block; }
 .light .dark-logo { display: none; }
+
+.plus-icon-themed {
+  color: #ffffff;
+}
+:root.light .plus-icon-themed,
+.light .plus-icon-themed {
+  color: #000000;
+}
+
 
 /* ==========================================================================
    Unified Button & Input System
@@ -223,6 +232,16 @@
   cursor: not-allowed;
 }
 
+/* Fix browser autofill white background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--color-surface-input) inset !important;
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 
 * {
   margin: 0;
@@ -234,6 +253,8 @@ html,
 body {
   width: 100%;
   height: 100%;
+  min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -241,6 +262,14 @@ body {
   color: var(--color-text-primary);
   font-family: Inter, Segoe UI, sans-serif;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 ::-webkit-scrollbar {
@@ -264,7 +293,7 @@ body {
 /* Markdown Styling */
 .prose {
   color: var(--color-text-primary);
-  line-height: 1.6;
+  line-height: 1.75;
 }
 
 .prose p {
@@ -340,9 +369,12 @@ body {
 }
 
 .prose table {
+  display: block;
   width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   margin: 1em 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .prose th, .prose td {
@@ -373,3 +405,16 @@ body {
   margin-top: 1em;
   margin-bottom: 0.5em;
 }
+
+/* Responsive Form Inputs (Prevent iOS Safari auto-zoom on focus) */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="date"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+

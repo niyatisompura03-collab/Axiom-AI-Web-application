@@ -12,7 +12,7 @@ interface AuthCardProps {
 
 export default function AuthCard({ children, footer, title, subtitle }: AuthCardProps) {
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-transparent select-none overflow-y-auto">
+    <main className="min-h-[100dvh] min-h-screen flex items-center justify-center py-6 px-3 sm:p-4 bg-transparent select-none overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -26,39 +26,19 @@ export default function AuthCard({ children, footer, title, subtitle }: AuthCard
           bg-surface-secondary/90
           backdrop-blur-2xl
           shadow-elevation
-          p-7
-          sm:p-9
+          p-5
+          sm:p-8
+          md:p-9
           flex
           flex-col
-          gap-6
+          gap-5
+          sm:gap-6
           relative
         "
       >
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center gap-3">
-          <div className="flex items-center justify-center">
-            <img 
-              src="/brand/axiom-mark-white.png" 
-              alt="Axiom" 
-              className="h-10 w-auto object-contain dark-logo" 
-            />
-            <img 
-              src="/brand/axiom-mark-black.png" 
-              alt="Axiom" 
-              className="h-10 w-auto object-contain light-logo" 
-            />
-          </div>
           <div className="flex flex-col items-center gap-1">
-            <img 
-              src="/brand/axiom-wordmark-white.png" 
-              alt="AXIOM" 
-              className="h-5 w-auto object-contain dark-logo" 
-            />
-            <img 
-              src="/brand/axiom-wordmark-black.png" 
-              alt="AXIOM" 
-              className="h-5 w-auto object-contain light-logo" 
-            />
             {subtitle ? (
               <p className="text-xs text-text-secondary font-normal tracking-normal max-w-[320px] mt-0.5">
                 {subtitle}
