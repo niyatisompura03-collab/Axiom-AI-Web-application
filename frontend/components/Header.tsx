@@ -14,7 +14,9 @@ export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps)
             type="button"
             onClick={() => setIsSidebarOpen((prev) => !prev)}
             aria-label="Toggle sidebar"
-            className="md:hidden flex items-center gap-2 h-10 px-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-primary shadow-elevation transition-all duration-200 cursor-pointer active:scale-95 group"
+            className={`flex items-center gap-2 h-10 px-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-primary shadow-elevation transition-all duration-200 cursor-pointer active:scale-95 group ${
+              isSidebarOpen ? "md:hidden" : "flex"
+            }`}
             title="Toggle sidebar"
           >
             <PanelLeft size={19} className="text-text-primary group-hover:text-accent transition-colors shrink-0" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileModal from "@/components/ProfileModal";
 import HelpModal from "@/components/HelpModal";
@@ -76,6 +76,21 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     await deleteConversation(id);
   };
 
+  const drawerTouchStartX = useRef<number | null>(null);
+
+  const handleDrawerTouchStart = (e: React.TouchEvent) => {
+    drawerTouchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleDrawerTouchEnd = (e: React.TouchEvent) => {
+    if (drawerTouchStartX.current === null) return;
+    const diffX = e.changedTouches[0].clientX - drawerTouchStartX.current;
+    if (diffX < -40) {
+      setIsOpen(false);
+    }
+    drawerTouchStartX.current = null;
+  };
+
   return (
     <>
       {/* Mobile Drawer Backdrop */}
@@ -93,6 +108,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       </AnimatePresence>
 
       <motion.div
+        onTouchStart={handleDrawerTouchStart}
+        onTouchEnd={handleDrawerTouchEnd}
         animate={{ width: isMobile ? 280 : isOpen ? 260 : 68 }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
         className={`h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 z-40 max-w-[85vw] w-[280px] shadow-2xl md:relative md:z-20 md:shadow-none md:translate-x-0 ${
