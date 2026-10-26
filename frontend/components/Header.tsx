@@ -7,7 +7,7 @@ interface HeaderProps {
 
 export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps) {
   return (
-    <header className="px-4 sm:px-6 md:px-10 py-3 sm:py-4 md:py-5 flex items-center justify-between bg-bg-app shrink-0 h-14 sm:h-16 md:h-[76px] border-b border-border/30">
+    <header className="px-4 sm:px-6 md:px-10 py-3 sm:py-4 md:py-5 flex items-center justify-between bg-bg-app shrink-0 h-14 sm:h-16 md:h-[76px] border-b border-border">
       <div className="flex items-center gap-2">
         {setIsSidebarOpen && (
           <button

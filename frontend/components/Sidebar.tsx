@@ -93,7 +93,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       </AnimatePresence>
 
       <motion.div
-        animate={{ width: isMobile ? (isOpen ? 280 : 0) : isOpen ? 260 : 68 }}
+        animate={{ width: isMobile ? 280 : isOpen ? 260 : 68 }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
         className={`h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 z-40 max-w-[85vw] w-[280px] shadow-2xl md:relative md:z-20 md:shadow-none md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
