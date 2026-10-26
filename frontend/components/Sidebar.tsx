@@ -33,7 +33,9 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [avatarError, setAvatarError] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => 
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
 
   useEffect(() => {
     const checkMobile = () => {
@@ -78,7 +80,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     <>
       {/* Mobile Drawer Backdrop */}
       <AnimatePresence>
-        {isMobile && isOpen && (
+        {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -91,10 +93,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       </AnimatePresence>
 
       <motion.div
-        animate={isMobile ? { x: isOpen ? 0 : "-100%", width: 280 } : { x: 0, width: isOpen ? 260 : 68 }}
+        animate={{ width: isMobile ? (isOpen ? 280 : 0) : isOpen ? 260 : 68 }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
-        className={`h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden ${
-          isMobile ? "fixed inset-y-0 left-0 z-40 max-w-[85vw] shadow-2xl" : "relative z-20"
+        className={`h-full border-r border-border bg-surface-secondary flex flex-col shrink-0 overflow-hidden transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 z-40 max-w-[85vw] w-[280px] shadow-2xl md:relative md:z-20 md:shadow-none md:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Top Header */}
@@ -107,10 +109,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             <button
               onClick={() => setIsOpen(false)}
               aria-label="Collapse sidebar"
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-surface-input transition-colors cursor-pointer group"
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-input hover:bg-surface border border-border text-text-primary transition-colors cursor-pointer group"
               title="Collapse sidebar"
             >
-              <X size={18} className="md:hidden text-text-secondary group-hover:text-text-primary" />
+              <X size={18} className="md:hidden text-text-primary" />
               <img src="/brand/axiom-mark-white.png" alt="Collapse sidebar" className="hidden md:block h-5 w-auto object-contain dark-logo group-hover:scale-105 transition-transform" />
               <img src="/brand/axiom-mark-black.png" alt="Collapse sidebar" className="hidden md:block h-5 w-auto object-contain light-logo group-hover:scale-105 transition-transform" />
             </button>
