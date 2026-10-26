@@ -3,6 +3,14 @@ import { ChatProvider } from "@/context/ChatContext";
 import { AuthProvider } from "@/context/AuthContext";
 import CustomCursor from "@/components/CustomCursor";
 import ThemeInitializer from "@/components/ThemeInitializer";
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata = {
   title: "Axiom",
   description: "Think • Remember • Do more",

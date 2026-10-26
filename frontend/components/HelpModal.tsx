@@ -35,7 +35,10 @@ export default function HelpModal({ open, onClose }: HelpModalProps) {
 
   return createPortal(
     <div className={backdropClass} onClick={onClose}>
-      <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: "600px", minHeight: "auto" }}>
+      <div 
+        className={`${styles.modal} w-[95%] sm:w-[90%] max-w-[600px] min-h-0 max-h-[90dvh]`} 
+        onClick={e => e.stopPropagation()}
+      >
         
         <div className={styles.mainContent}>
           <div className={styles.contentHeader}>
@@ -44,7 +47,7 @@ export default function HelpModal({ open, onClose }: HelpModalProps) {
               <X size={20} />
             </button>
           </div>
-          <div className={styles.contentBody} style={{ padding: "1.5rem 2rem 2rem" }}>
+          <div className={`${styles.contentBody} p-4 sm:p-6 md:p-7 overflow-y-auto`}>
             <div className="space-y-6 text-text-secondary text-sm">
               <section>
                 <h3 className="text-text-primary text-base font-semibold mb-2 flex items-center gap-2">

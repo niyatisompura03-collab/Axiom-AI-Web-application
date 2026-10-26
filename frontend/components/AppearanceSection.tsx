@@ -53,14 +53,23 @@ const AppearanceSection: React.FC<{ username: string }> = ({ username }) => {
   // Apply theme and accent color to the document whenever they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // toggle dark class on root element
-      if (settings.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      const root = document.documentElement;
+      root.classList.remove('light', 'dark');
+
+      if (settings.theme === 'light') {
+        root.classList.add('light');
+      } else if (settings.theme === 'dark') {
+        root.classList.add('dark');
+      } else if (settings.theme === 'system') {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          root.classList.add('light');
+        } else {
+          root.classList.add('dark');
+        }
       }
+
       // set accent color CSS variable
-      document.documentElement.style.setProperty('--accent-color', settings.accent_color);
+      root.style.setProperty('--accent-color', settings.accent_color);
     }
   }, [settings.theme, settings.accent_color]);
 

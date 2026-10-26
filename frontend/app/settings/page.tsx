@@ -11,8 +11,8 @@ export default function SettingsPage() {
   if (loading) return null;
   const username = user?.username ?? "";
   return (
-    <div className="p-6 space-y-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
+    <div className="px-4 py-6 sm:p-6 md:p-8 space-y-6 sm:space-y-8 max-w-4xl mx-auto w-full min-h-[100dvh]">
+      <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">Settings</h1>
       <AppearanceSection username={username} />
       <AISection username={username} />
       <MemorySection username={username} />
