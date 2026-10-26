@@ -1,4 +1,4 @@
-import { Menu } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 
 interface HeaderProps {
   isSidebarOpen?: boolean;
@@ -13,11 +13,13 @@ export default function Header({ isSidebarOpen, setIsSidebarOpen }: HeaderProps)
           <button
             type="button"
             onClick={() => setIsSidebarOpen((prev) => !prev)}
-            aria-label="Toggle navigation menu"
-            className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-secondary border border-border/60 transition-colors cursor-pointer"
-            title="Toggle menu"
+            aria-label="Toggle sidebar"
+            className="md:hidden flex items-center gap-2 h-10 px-2.5 rounded-xl bg-surface-secondary hover:bg-surface border border-border text-text-primary shadow-elevation transition-all duration-200 cursor-pointer active:scale-95 group"
+            title="Toggle sidebar"
           >
-            <Menu size={18} />
+            <PanelLeft size={19} className="text-text-primary group-hover:text-accent transition-colors shrink-0" />
+            <img src="/brand/axiom-mark-white.png" alt="Axiom" className="h-5 w-auto object-contain dark-logo group-hover:scale-105 transition-transform" />
+            <img src="/brand/axiom-mark-black.png" alt="Axiom" className="h-5 w-auto object-contain light-logo group-hover:scale-105 transition-transform" />
           </button>
         )}
       </div>
