@@ -97,7 +97,7 @@ export default function LoginPage() {
         )}
 
         <AuthButton type="submit" disabled={loading}>
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? "Loging in..." : "Log In"}
         </AuthButton>
         
         <div className="flex items-center gap-3 my-1">
