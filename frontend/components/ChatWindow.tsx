@@ -39,7 +39,7 @@ export default function ChatWindow({
 
           {messages.map((message, index) => (
             <MessageBubble
-              key={index}
+              key={`${index}-${message.document?.document_id || "plain"}`}
               role={message.role}
               content={message.content}
               document={message.document}

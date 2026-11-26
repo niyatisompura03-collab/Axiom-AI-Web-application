@@ -19,7 +19,8 @@ export type IconName =
   | "logout"
   | "eye"
   | "check"
-  | "arrowLeft";
+  | "arrowLeft"
+  | "file";
 
 export function Icon({ name, size = 18, className = "" }: { name: IconName; size?: number; className?: string }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -81,6 +82,12 @@ export function Icon({ name, size = 18, className = "" }: { name: IconName; size
     ),
     check: <path d="m5 12 4 4L19 6" />,
     arrowLeft: <path d="M20 12H4m6-6-6 6 6 6" />,
+    file: (
+      <>
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 3v5h5M9 13h6M9 17h4" />
+      </>
+    ),
   };
 
   return (

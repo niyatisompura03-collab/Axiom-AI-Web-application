@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import { Icon } from "@/components/FigmaIcons";
 import { useChat } from "@/context/ChatContext";
 import { uploadDocumentApi } from "@/lib/api";
+import { getAttachmentFileType, getImageDataUrl, isImageAttachment } from "@/utils/attachment";
 
 interface ChatInputProps {
   input: string;
@@ -44,6 +45,8 @@ export default function ChatInput({
       setActiveDocument({
         document_id: result.document_id,
         filename: result.filename,
+        type: result.type,
+        mime_type: result.mime_type || file.type || undefined,
         content: base64Content,
       });
     } catch (err: any) {
@@ -77,19 +80,35 @@ export default function ChatInput({
     <div className="composer-area">
       <div className="composer-width">
         <form className="composer" onSubmit={handleSubmit}>
-          {activeDocument && (
-            <div className="attachment-chip">
-              <Icon name="attach" size={14} />
-              <span>{activeDocument.filename}</span>
-              <button
-                type="button"
-                aria-label="Remove attachment"
-                onClick={() => setActiveDocument(null)}
-              >
-                <Icon name="close" size={13} />
-              </button>
-            </div>
-          )}
+          {activeDocument && (() => {
+            const chipThumbUrl = isImageAttachment(activeDocument)
+              ? getImageDataUrl(activeDocument)
+              : null;
+            const chipFileType = getAttachmentFileType(activeDocument);
+
+            return (
+              <div className="attachment-chip">
+                {chipThumbUrl ? (
+                  <img
+                    src={chipThumbUrl}
+                    alt={activeDocument.filename}
+                    className="attachment-chip-thumb"
+                  />
+                ) : (
+                  <Icon name="file" size={14} />
+                )}
+                <span>{activeDocument.filename}</span>
+                <span className="attachment-chip-type">{chipFileType}</span>
+                <button
+                  type="button"
+                  aria-label="Remove attachment"
+                  onClick={() => setActiveDocument(null)}
+                >
+                  <Icon name="close" size={13} />
+                </button>
+              </div>
+            );
+          })()}
 
           <textarea
             ref={textareaRef}

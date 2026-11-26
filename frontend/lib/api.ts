@@ -192,3 +192,35 @@ export async function uploadDocumentApi(file: File) {
 
   return response.json();
 }
+
+const documentPreviewCache = new Map<
+  string,
+  { document_id: string; filename: string; type: string; mime_type?: string; content?: string }
+>();
+
+export async function getDocumentPreviewApi(documentId: string) {
+  const token = getToken();
+  const cacheKey = `${token || "anon"}:${documentId}`;
+  const cached = documentPreviewCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetch(`${API_URL}/documents/${encodeURIComponent(documentId)}`, {
+    headers: getHeaders(),
+  });
+
+  if (response.status === 401) {
+    window.dispatchEvent(new Event("auth:unauthorized"));
+    throw new Error("Unauthorized");
+  }
+  if (!response.ok) {
+    throw new Error("Failed to fetch document preview");
+  }
+
+  const data = await response.json();
+  if (data?.content) {
+    documentPreviewCache.set(cacheKey, data);
+  }
+  return data;
+}

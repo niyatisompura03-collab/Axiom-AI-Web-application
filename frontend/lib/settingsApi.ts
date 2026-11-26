@@ -30,7 +30,8 @@ export const fetchSettings = async () => {
     throw new Error('Unauthorized');
   }
   if (!response.ok) {
-    throw new Error('Failed to fetch settings');
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to fetch settings');
   }
   return await response.json();
 };
@@ -47,7 +48,8 @@ export const updateSettings = async (payload: any) => {
     throw new Error('Unauthorized');
   }
   if (!response.ok) {
-    throw new Error('Failed to update settings');
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.detail || 'Failed to update settings');
   }
   return await response.json();
 };

@@ -61,8 +61,8 @@ interface ChatContextType {
   startNewChat: () => Promise<void>;
   editMessage: (index: number, newContent: string) => Promise<void>;
 
-  activeDocument: { document_id: string; filename: string; content?: string } | null;
-  setActiveDocument: React.Dispatch<React.SetStateAction<{ document_id: string; filename: string; content?: string } | null>>;
+  activeDocument: Message["document"] | null;
+  setActiveDocument: React.Dispatch<React.SetStateAction<Message["document"] | null>>;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -75,7 +75,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const [input, setInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(true);
-  const [activeDocument, setActiveDocument] = useState<{ document_id: string; filename: string } | null>(null);
+  const [activeDocument, setActiveDocument] = useState<Message["document"] | null>(null);
   const { loading: authLoading, isAuthenticated, user } = useAuth();
   const refreshConversationList = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -246,8 +246,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         document: activeDocument ? {
           document_id: activeDocument.document_id,
           filename: activeDocument.filename,
-          type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image' : 'text',
-          mime_type: activeDocument.filename.match(/\.(png|jpe?g|webp)$/i) ? 'image/' + activeDocument.filename.split('.').pop() : undefined
+          type: activeDocument.type || (activeDocument.filename.match(/\.(png|jpe?g|webp|gif)$/i) ? 'image' : 'text'),
+          mime_type: activeDocument.mime_type,
+          content: activeDocument.content,
         } : undefined
       },
       {

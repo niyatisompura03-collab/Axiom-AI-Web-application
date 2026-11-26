@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Icon, SettingsIcon, SettingsTab } from "@/components/FigmaIcons";
+import { SettingsIcon, SettingsTab } from "@/components/FigmaIcons";
 import { useAuth } from "@/context/AuthContext";
 import { fetchSettings, updateSettings, fetchMemories } from "@/lib/settingsApi";
+import { applyAppearanceToDom } from "@/utils/theme";
 
 interface SettingsModalProps {
   initialTab?: SettingsTab;
@@ -74,46 +75,142 @@ function Choices({
   );
 }
 
+interface SettingsDraft {
+  theme: "dark" | "light";
+  accent: string;
+  compact: boolean;
+  animations: boolean;
+  responseLength: "short" | "balanced" | "detailed";
+  markdown: boolean;
+  personality: "adaptive" | "professional" | "creative";
+  memoryEnabled: boolean;
+  longTermMemory: boolean;
+}
+
+const DEFAULT_SETTINGS_DRAFT: SettingsDraft = {
+  theme: "dark",
+  accent: "#b2a0e8",
+  compact: false,
+  animations: true,
+  responseLength: "balanced",
+  markdown: true,
+  personality: "adaptive",
+  memoryEnabled: true,
+  longTermMemory: true,
+};
+
+function parseSettingsDraft(
+  settingsData: any,
+  fallback: SettingsDraft = DEFAULT_SETTINGS_DRAFT
+): SettingsDraft {
+  if (!settingsData) return fallback;
+
+  const rawLength = settingsData.ai?.response_length;
+  const responseLength: SettingsDraft["responseLength"] =
+    rawLength === "short" || rawLength === "balanced" || rawLength === "detailed"
+      ? rawLength
+      : fallback.responseLength;
+
+  const rawPersonality = settingsData.ai?.personality;
+  const personality: SettingsDraft["personality"] =
+    rawPersonality === "adaptive" ||
+    rawPersonality === "professional" ||
+    rawPersonality === "creative"
+      ? rawPersonality
+      : fallback.personality;
+
+  return {
+    theme: settingsData.appearance?.theme === "light" ? "light" : "dark",
+    accent: settingsData.appearance?.accent_color || fallback.accent,
+    compact:
+      settingsData.appearance?.compact_mode !== undefined
+        ? Boolean(settingsData.appearance.compact_mode)
+        : fallback.compact,
+    animations:
+      settingsData.appearance?.animations !== undefined
+        ? settingsData.appearance.animations !== false
+        : fallback.animations,
+    responseLength,
+    markdown:
+      settingsData.ai?.markdown_enabled !== undefined
+        ? settingsData.ai.markdown_enabled !== false
+        : fallback.markdown,
+    personality,
+    memoryEnabled:
+      settingsData.memory?.memory_enabled !== undefined
+        ? settingsData.memory.memory_enabled !== false
+        : fallback.memoryEnabled,
+    longTermMemory:
+      settingsData.memory?.allow_long_term_memory !== undefined
+        ? settingsData.memory.allow_long_term_memory !== false
+        : fallback.longTermMemory,
+  };
+}
+
+function readDomSettingsDraft(): SettingsDraft {
+  if (typeof document === "undefined") return DEFAULT_SETTINGS_DRAFT;
+  const root = document.documentElement;
+  return {
+    ...DEFAULT_SETTINGS_DRAFT,
+    theme: root.dataset.theme === "light" ? "light" : "dark",
+    accent: root.style.getPropertyValue("--accent").trim() || DEFAULT_SETTINGS_DRAFT.accent,
+    compact: root.dataset.compact === "true",
+    animations: root.dataset.motion !== "false",
+  };
+}
+
+function areSettingsEqual(a: SettingsDraft, b: SettingsDraft): boolean {
+  return (
+    a.theme === b.theme &&
+    a.accent === b.accent &&
+    a.compact === b.compact &&
+    a.animations === b.animations &&
+    a.responseLength === b.responseLength &&
+    a.markdown === b.markdown &&
+    a.personality === b.personality &&
+    a.memoryEnabled === b.memoryEnabled &&
+    a.longTermMemory === b.longTermMemory
+  );
+}
+
 export default function SettingsModal({
   initialTab = "Appearance",
   open,
   onClose,
 }: SettingsModalProps) {
-  const { user, isAuthenticated, updateProfile } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const [tab, setTab] = useState<SettingsTab>(initialTab);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Appearance state
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [accent, setAccent] = useState<string>("#b2a0e8");
-  const [compact, setCompact] = useState<boolean>(false);
-  const [animations, setAnimations] = useState<boolean>(true);
-
-  // AI state
-  const [responseLength, setResponseLength] = useState<"short" | "balanced" | "detailed">("balanced");
-  const [markdown, setMarkdown] = useState<boolean>(true);
-  const [personality, setPersonality] = useState<"adaptive" | "professional" | "creative">("adaptive");
-
-  // Memory state
-  const [memoryEnabled, setMemoryEnabled] = useState<boolean>(true);
-  const [longTermMemory, setLongTermMemory] = useState<boolean>(true);
+  const [savedSnapshot, setSavedSnapshot] = useState<SettingsDraft>(DEFAULT_SETTINGS_DRAFT);
+  const [draft, setDraft] = useState<SettingsDraft>(DEFAULT_SETTINGS_DRAFT);
   const [memories, setMemories] = useState<MemoryItem[]>([]);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const hasUnsavedChanges = !areSettingsEqual(draft, savedSnapshot);
 
   useEffect(() => {
     setMounted(true);
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
     if (open) {
       setTab(initialTab);
       setSaved(false);
+      setSaveError(null);
+      setLoadError(null);
     }
   }, [open, initialTab]);
 
@@ -121,94 +218,81 @@ export default function SettingsModal({
   useEffect(() => {
     if (!open) return;
 
+    let cancelled = false;
+
     async function loadData() {
       setLoading(true);
+      setLoadError(null);
       try {
         if (isAuthenticated) {
-          const [settingsData, memoriesData] = await Promise.all([
-            fetchSettings().catch(() => null),
-            fetchMemories().catch(() => []),
+          const [settingsResult, memoriesResult] = await Promise.allSettled([
+            fetchSettings(),
+            fetchMemories(),
           ]);
 
-          if (settingsData) {
-            if (settingsData.appearance) {
-              setTheme(settingsData.appearance.theme === "light" ? "light" : "dark");
-              setAccent(settingsData.appearance.accent_color || "#b2a0e8");
-              setCompact(Boolean(settingsData.appearance.compact_mode));
-              setAnimations(settingsData.appearance.animations !== false);
-            }
-            if (settingsData.ai) {
-              setResponseLength(settingsData.ai.response_length || "balanced");
-              setMarkdown(settingsData.ai.markdown_enabled !== false);
-              setPersonality(settingsData.ai.personality || "adaptive");
-            }
-            if (settingsData.memory) {
-              setMemoryEnabled(settingsData.memory.memory_enabled !== false);
-              setLongTermMemory(settingsData.memory.allow_long_term_memory !== false);
-            }
+          if (cancelled) return;
+
+          if (settingsResult.status === "fulfilled" && settingsResult.value) {
+            const loadedDraft = parseSettingsDraft(settingsResult.value);
+            setSavedSnapshot(loadedDraft);
+            setDraft(loadedDraft);
+          } else {
+            const reason =
+              settingsResult.status === "rejected" && settingsResult.reason instanceof Error
+                ? settingsResult.reason.message
+                : "Failed to load settings";
+            setLoadError(reason);
           }
 
-          if (Array.isArray(memoriesData)) {
-            setMemories(memoriesData);
+          if (memoriesResult.status === "fulfilled" && Array.isArray(memoriesResult.value)) {
+            setMemories(memoriesResult.value);
           }
         } else {
-          // Defaults from DOM
-          const root = document.documentElement;
-          setTheme(root.dataset.theme === "light" ? "light" : "dark");
-          setAccent(root.style.getPropertyValue("--accent") || "#b2a0e8");
-          setCompact(root.dataset.compact === "true");
-          setAnimations(root.dataset.motion !== "false");
+          const guestDraft = readDomSettingsDraft();
+          setSavedSnapshot(guestDraft);
+          setDraft(guestDraft);
+          setMemories([]);
         }
       } catch (err) {
-        console.error("Failed to load settings:", err);
+        if (!cancelled) {
+          console.error("Failed to load settings:", err);
+          setLoadError("Failed to load settings");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadData();
-  }, [open, isAuthenticated, user]);
 
-  // Apply appearance changes dynamically
-  const handleThemeChange = (newTheme: "dark" | "light") => {
-    setTheme(newTheme);
-    const root = document.documentElement;
-    root.dataset.theme = newTheme;
-    if (newTheme === "light") {
-      root.classList.add("light");
-      root.classList.remove("dark");
-    } else {
-      root.classList.add("dark");
-      root.classList.remove("light");
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isAuthenticated, user?.username]);
+
+  // Keep edits as unsaved local state until Save Settings is clicked
+  const updateDraft = (patch: Partial<SettingsDraft>) => {
+    if (savedTimerRef.current) {
+      clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = null;
     }
+    setSaved(false);
+    setSaveError(null);
+    setDraft((prev) => ({ ...prev, ...patch }));
   };
 
-  const handleAccentChange = (newAccent: string) => {
-    setAccent(newAccent);
-    const root = document.documentElement;
-    if (newAccent) {
-      root.style.setProperty("--accent", newAccent);
-      root.style.setProperty("--accent-color", newAccent);
-    } else {
-      root.style.removeProperty("--accent");
-      root.style.removeProperty("--accent-color");
+  // Discard unsaved local edits and revert to last saved state
+  const handleDiscard = () => {
+    if (saving) return;
+    if (savedTimerRef.current) {
+      clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = null;
     }
-  };
-
-  const handleCompactChange = (val: boolean) => {
-    setCompact(val);
-    const root = document.documentElement;
-    root.dataset.compact = String(val);
-    if (val) root.classList.add("compact");
-    else root.classList.remove("compact");
-  };
-
-  const handleAnimationsChange = (val: boolean) => {
-    setAnimations(val);
-    const root = document.documentElement;
-    root.dataset.motion = String(val);
-    if (!val) root.classList.add("no-animations");
-    else root.classList.remove("no-animations");
+    setDraft(savedSnapshot);
+    setSaved(false);
+    setSaveError(null);
   };
 
   // Keyboard navigation & escape key
@@ -226,33 +310,65 @@ export default function SettingsModal({
 
   // Save full settings to backend
   const handleSave = async () => {
-    setSaving(true);
+    if (saving) return;
+    if (savedTimerRef.current) {
+      clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = null;
+    }
+
     setSaved(false);
+    setSaveError(null);
+
+    if (!isAuthenticated) {
+      setSaveError("Please sign in to save settings.");
+      return;
+    }
+
+    if (!hasUnsavedChanges) return;
+
+    setSaving(true);
     try {
-      if (isAuthenticated) {
-        await updateSettings({
-          appearance: {
-            theme,
-            accent_color: accent,
-            compact_mode: compact,
-            animations,
-          },
-          ai: {
-            response_length: responseLength,
-            markdown_enabled: markdown,
-            personality,
-          },
-          memory: {
-            memory_enabled: memoryEnabled,
-            allow_long_term_memory: longTermMemory,
-          },
-        });
-      }
+      const updated = await updateSettings({
+        appearance: {
+          theme: draft.theme,
+          accent_color: draft.accent,
+          compact_mode: draft.compact,
+          animations: draft.animations,
+        },
+        ai: {
+          response_length: draft.responseLength,
+          markdown_enabled: draft.markdown,
+          personality: draft.personality,
+        },
+        memory: {
+          memory_enabled: draft.memoryEnabled,
+          allow_long_term_memory: draft.longTermMemory,
+        },
+      });
+
+      const persistedDraft = parseSettingsDraft(updated, draft);
+      setSavedSnapshot(persistedDraft);
+      setDraft(persistedDraft);
+
+      applyAppearanceToDom({
+        theme: persistedDraft.theme,
+        accent_color: persistedDraft.accent,
+        compact_mode: persistedDraft.compact,
+        animations: persistedDraft.animations,
+      });
+
       setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      savedTimerRef.current = setTimeout(() => {
+        setSaved(false);
+      }, 3000);
     } catch (e) {
       console.error("Failed to save settings:", e);
-      alert("Failed to save settings. Please try again.");
+      setSaved(false);
+      setSaveError(
+        e instanceof Error && e.message
+          ? e.message
+          : "Failed to save settings. Please try again."
+      );
     } finally {
       setSaving(false);
     }
@@ -285,7 +401,6 @@ export default function SettingsModal({
               className={tab === item ? "active" : ""}
               onClick={() => {
                 setTab(item);
-                setSaved(false);
                 if (contentRef.current) contentRef.current.scrollTop = 0;
               }}
             >
@@ -326,10 +441,10 @@ export default function SettingsModal({
                       {(["light", "dark"] as const).map((t) => (
                         <button
                           type="button"
-                          className={`theme-preview ${t} ${theme === t ? "chosen" : ""}`}
+                          className={`theme-preview ${t} ${draft.theme === t ? "chosen" : ""}`}
                           key={t}
-                          aria-pressed={theme === t}
-                          onClick={() => handleThemeChange(t)}
+                          aria-pressed={draft.theme === t}
+                          onClick={() => updateDraft({ theme: t })}
                         >
                           <span className="mini-window">
                             <i className="mini-sidebar" />
@@ -339,7 +454,7 @@ export default function SettingsModal({
                           </span>
                           <span className="theme-preview-label">
                             {t === "dark" ? "Graphite" : "Pearl"}
-                            <span className="selection-circle">{theme === t ? "✓" : ""}</span>
+                            <span className="selection-circle">{draft.theme === t ? "✓" : ""}</span>
                           </span>
                         </button>
                       ))}
@@ -361,11 +476,11 @@ export default function SettingsModal({
                             type="button"
                             key={label}
                             aria-label={label}
-                            aria-pressed={accent === color}
+                            aria-pressed={draft.accent === color}
                             style={{ background: color }}
-                            onClick={() => handleAccentChange(color)}
+                            onClick={() => updateDraft({ accent: color })}
                           >
-                            {accent === color ? "✓" : ""}
+                            {draft.accent === color ? "✓" : ""}
                           </button>
                         ))}
                       </div>
@@ -378,8 +493,8 @@ export default function SettingsModal({
                       </div>
                       <Toggle
                         label="Compact mode"
-                        value={compact}
-                        onChange={handleCompactChange}
+                        value={draft.compact}
+                        onChange={(val) => updateDraft({ compact: val })}
                       />
                     </div>
 
@@ -390,8 +505,8 @@ export default function SettingsModal({
                       </div>
                       <Toggle
                         label="Animations and depth"
-                        value={animations}
-                        onChange={handleAnimationsChange}
+                        value={draft.animations}
+                        onChange={(val) => updateDraft({ animations: val })}
                       />
                     </div>
                   </>
@@ -409,9 +524,11 @@ export default function SettingsModal({
                       </div>
                       <Choices
                         label="Response length"
-                        value={responseLength}
+                        value={draft.responseLength}
                         options={["Short", "Balanced", "Detailed"]}
-                        onChange={(v) => setResponseLength(v as any)}
+                        onChange={(v) =>
+                          updateDraft({ responseLength: v as SettingsDraft["responseLength"] })
+                        }
                       />
                     </div>
 
@@ -422,8 +539,8 @@ export default function SettingsModal({
                       </div>
                       <Toggle
                         label="Markdown"
-                        value={markdown}
-                        onChange={(v) => setMarkdown(v)}
+                        value={draft.markdown}
+                        onChange={(val) => updateDraft({ markdown: val })}
                       />
                     </div>
 
@@ -434,9 +551,11 @@ export default function SettingsModal({
                       </div>
                       <Choices
                         label="Personality"
-                        value={personality}
+                        value={draft.personality}
                         options={["Adaptive", "Professional", "Creative"]}
-                        onChange={(v) => setPersonality(v as any)}
+                        onChange={(v) =>
+                          updateDraft({ personality: v as SettingsDraft["personality"] })
+                        }
                       />
                     </div>
                   </>
@@ -454,21 +573,21 @@ export default function SettingsModal({
                       </div>
                       <Toggle
                         label="Enable memory"
-                        value={memoryEnabled}
-                        onChange={(v) => setMemoryEnabled(v)}
+                        value={draft.memoryEnabled}
+                        onChange={(val) => updateDraft({ memoryEnabled: val })}
                       />
                     </div>
 
-                    <div className={`setting-row ${!memoryEnabled ? "setting-disabled" : ""}`}>
+                    <div className={`setting-row ${!draft.memoryEnabled ? "setting-disabled" : ""}`}>
                       <div>
                         <h3>Long-term memory</h3>
                         <p>Keep useful details beyond a single session.</p>
                       </div>
                       <Toggle
                         label="Long-term memory"
-                        disabled={!memoryEnabled}
-                        value={memoryEnabled && longTermMemory}
-                        onChange={(v) => setLongTermMemory(v)}
+                        disabled={!draft.memoryEnabled}
+                        value={draft.memoryEnabled && draft.longTermMemory}
+                        onChange={(val) => updateDraft({ longTermMemory: val })}
                       />
                     </div>
 
@@ -548,23 +667,47 @@ export default function SettingsModal({
           </div>
 
           <footer className="settings-footer">
-            <span>
-              {saved
-                ? "Changes saved successfully ✓"
-                : tab === "Appearance"
-                  ? "Theme updates instantly"
-                  : ""}
-            </span>
+            {saveError ? (
+              <span className="settings-status error" role="alert">
+                {saveError}
+              </span>
+            ) : loadError ? (
+              <span className="settings-status error" role="alert">
+                {loadError}
+              </span>
+            ) : saved ? (
+              <span className="settings-status success" role="status">
+                Settings saved successfully ✓
+              </span>
+            ) : !isAuthenticated ? (
+              <span className="settings-status">Sign in to save settings</span>
+            ) : hasUnsavedChanges ? (
+              <span className="settings-status unsaved">Unsaved changes</span>
+            ) : (
+              <span className="settings-status">Save to apply changes</span>
+            )}
 
-            {tab !== "About" && (
-              <button
-                type="button"
-                className="settings-save"
-                disabled={saving}
-                onClick={handleSave}
-              >
-                {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
-              </button>
+            {(tab !== "About" || hasUnsavedChanges) && (
+              <div className="settings-footer-actions">
+                {hasUnsavedChanges && (
+                  <button
+                    type="button"
+                    className="settings-discard"
+                    disabled={saving}
+                    onClick={handleDiscard}
+                  >
+                    Discard
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="settings-save"
+                  disabled={saving || !hasUnsavedChanges || !isAuthenticated}
+                  onClick={handleSave}
+                >
+                  {saving ? "Saving..." : "Save Settings"}
+                </button>
+              </div>
             )}
           </footer>
         </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -8,6 +8,12 @@ import "highlight.js/styles/github-dark.css";
 import { Icon, Mark } from "@/components/FigmaIcons";
 import { useChat } from "@/context/ChatContext";
 import { useAuth } from "@/context/AuthContext";
+import { getDocumentPreviewApi } from "@/lib/api";
+import {
+  getAttachmentFileType,
+  getImageDataUrl,
+  isImageAttachment,
+} from "@/utils/attachment";
 
 interface MessageBubbleProps {
   role: "user" | "assistant" | "system";
@@ -37,6 +43,57 @@ export default function MessageBubble({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(content);
   const [isSaving, setIsSaving] = useState(false);
+  const [fetchedImage, setFetchedImage] = useState<{
+    documentId: string;
+    content: string;
+    mimeType?: string;
+  } | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+
+  const isImage = Boolean(document && isImageAttachment(document));
+  const documentId = document?.document_id;
+  const inlineImageContent = document?.content;
+
+  useEffect(() => {
+    setImageLoadFailed(false);
+
+    if (!isUser || !documentId || !isImage || inlineImageContent) {
+      setIsLoadingImage(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingImage(true);
+
+    getDocumentPreviewApi(documentId)
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.content) {
+          setFetchedImage({
+            documentId,
+            content: res.content,
+            mimeType: res.mime_type,
+          });
+        } else {
+          setImageLoadFailed(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setImageLoadFailed(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingImage(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isUser, documentId, isImage, inlineImageContent]);
 
   const userName = user?.username || "You";
   const avatarLetter = (userName || "Y").charAt(0).toUpperCase();
@@ -90,25 +147,57 @@ export default function MessageBubble({
         </div>
 
         <div className="user-bubble">
-          {document && (
-            <div className="message-attachment" style={{ marginBottom: "8px" }}>
-              <Icon name="attach" size={14} />
-              <span>{document.filename}</span>
-              {document.content && document.type === "image" && (
-                <img
-                  src={`data:${document.mime_type || "image/png"};base64,${document.content}`}
-                  alt={document.filename}
-                  style={{
-                    maxHeight: "160px",
-                    maxWidth: "100%",
-                    borderRadius: "8px",
-                    marginTop: "6px",
-                    display: "block",
-                  }}
-                />
-              )}
-            </div>
-          )}
+          {document && (() => {
+            const fileTypeLabel = getAttachmentFileType(document);
+            const activeFetched =
+              fetchedImage?.documentId === document.document_id ? fetchedImage : null;
+            const imageSrc = isImage
+              ? getImageDataUrl(document, activeFetched?.content, activeFetched?.mimeType)
+              : null;
+
+            if (isImage && !imageLoadFailed) {
+              return (
+                <div className="message-attachment-card is-image">
+                  {imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt={document.filename}
+                      className="message-attachment-thumb"
+                      onError={() => setImageLoadFailed(true)}
+                    />
+                  ) : isLoadingImage ? (
+                    <div className="message-attachment-loading">Loading preview...</div>
+                  ) : null}
+                  <div className="message-attachment-meta">
+                    <div className="message-attachment-info">
+                      <span className="message-attachment-name" title={document.filename}>
+                        {document.filename}
+                      </span>
+                      <span className="message-attachment-type">{fileTypeLabel} • Image</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="message-attachment-card is-document">
+                <div className="message-document-card">
+                  <div className="message-document-icon">
+                    <Icon name="file" size={16} />
+                  </div>
+                  <div className="message-attachment-info">
+                    <span className="message-attachment-name" title={document.filename}>
+                      {document.filename}
+                    </span>
+                    <span className="message-attachment-type">
+                      {fileTypeLabel} {isImage ? "• Image" : "• Document"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {isEditing ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>

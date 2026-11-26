@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, status
 from backend.core.security import get_current_username
 from backend.core.document_processor import process_document, SUPPORTED_EXTENSIONS, get_extension
-from backend.core.database import save_document
+from backend.core.database import save_document, get_document
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -66,7 +66,8 @@ async def upload_document(
         return {
             "document_id": doc["document_id"],
             "filename": doc["filename"],
-            "type": doc["type"]
+            "type": doc["type"],
+            "mime_type": doc.get("mime_type", ""),
         }
         
     except ValueError as e:
@@ -88,3 +89,26 @@ async def upload_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="The document could not be processed. Verify that the file is valid and try again.",
         )
+
+
+@router.get("/{document_id}")
+def get_document_preview(
+    document_id: str,
+    username: str = Depends(get_current_username)
+):
+    doc = get_document(document_id, user_id=username)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+
+    payload = {
+        "document_id": doc["document_id"],
+        "filename": doc["filename"],
+        "type": doc.get("type", ""),
+        "mime_type": doc.get("mime_type", ""),
+    }
+    if doc.get("type") == "image":
+        payload["content"] = doc.get("content", "")
+    return payload
