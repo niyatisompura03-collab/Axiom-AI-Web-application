@@ -198,6 +198,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setMessages([]);
       setRecentConversations([]);
       setSelectedConversation(null);
+      setActiveDocument(null);
       setIsRestoring(false);
       return;
     }

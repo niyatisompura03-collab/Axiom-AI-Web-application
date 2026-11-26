@@ -131,7 +131,7 @@ export default function ChatInput({
             </div>
 
             <div className="send-tools">
-              <span>↵ to send</span>
+              
               <button
                 type="submit"
                 className="send-button"

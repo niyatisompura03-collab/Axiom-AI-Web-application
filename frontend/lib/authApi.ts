@@ -19,12 +19,12 @@ export async function registerUser(username: string, password: string, email?: s
 }
 
 export async function loginUser(username: string, password: string): Promise<{ access_token: string; token_type: string }> {
-  const url = new URL(`${API_URL}/auth/login`);
-  url.searchParams.append("username", username);
-  url.searchParams.append("password", password);
-
-  const response = await fetch(url.toString(), {
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
   });
   
   if (!response.ok) {
@@ -32,6 +32,28 @@ export async function loginUser(username: string, password: string): Promise<{ a
     throw new Error(errorData?.detail || `Login failed with status ${response.status}`);
   }
   
+  return response.json();
+}
+
+async function parseAuthResponse(response: Response, fallbackMessage: string) {
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+    const error = new Error("Session expired") as Error & { status?: number };
+    error.status = 401;
+    throw error;
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    const error = new Error(
+      errorData?.detail || `${fallbackMessage} with status ${response.status}`
+    ) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+
   return response.json();
 }
 
@@ -43,12 +65,7 @@ export async function getCurrentUser(token: string) {
     }
   });
   
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.detail || `Failed to fetch user with status ${response.status}`);
-  }
-  
-  return response.json();
+  return parseAuthResponse(response, "Failed to fetch user");
 }
 
 export async function updateUser(token: string, data: { username: string; avatar?: string | null; dob?: string | null }) {
@@ -61,12 +78,7 @@ export async function updateUser(token: string, data: { username: string; avatar
     body: JSON.stringify(data),
   });
   
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.detail || `Failed to update user with status ${response.status}`);
-  }
-  
-  return response.json();
+  return parseAuthResponse(response, "Failed to update user");
 }
 
 export async function forgotPassword(email: string) {

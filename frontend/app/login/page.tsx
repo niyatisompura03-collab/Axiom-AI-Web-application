@@ -151,9 +151,8 @@ export default function LoginPage() {
 
       <p className="auth-switch">
         New to Axiom?{" "}
-        <Link href="/signup" style={{ color: "white" }}>
+        <Link href="/signup" style={{ color: "white" }} className="hover:underline">
           Create an account
-          <Icon name="chevron" size={13} />
         </Link>
       </p>
     </AuthLayout>

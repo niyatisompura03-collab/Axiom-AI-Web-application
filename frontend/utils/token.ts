@@ -18,3 +18,24 @@ export function removeToken(): void {
     localStorage.removeItem(TOKEN_KEY);
   }
 }
+
+export function getTokenExpirationMs(token: string): number | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const payload = JSON.parse(atob(padded));
+    if (typeof payload.exp !== "number") return null;
+    return payload.exp * 1000;
+  } catch {
+    return null;
+  }
+}
+
+export function isTokenExpired(token: string): boolean {
+  const expMs = getTokenExpirationMs(token);
+  if (expMs === null) return true;
+  return Date.now() >= expMs;
+}

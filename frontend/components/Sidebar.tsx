@@ -92,7 +92,7 @@ export default function Sidebar({
           <span>
             axiom<span className="brand-period">.</span>
           </span>
-          <span className="version">V2</span>
+          
         </a>
         <button
           type="button"

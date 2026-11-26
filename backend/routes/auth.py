@@ -38,6 +38,10 @@ class AuthRequest(BaseModel):
     password: str
     email: Optional[str] = None
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 class ProfileUpdateRequest(BaseModel):
     username: str
     avatar: Optional[str] = None
@@ -261,7 +265,9 @@ def google_callback(
     return response
 
 @router.post("/login")
-def login(username: str, password: str):
+def login(request: LoginRequest):
+    username = request.username
+    password = request.password
 
     user = users_collection.find_one(
         {

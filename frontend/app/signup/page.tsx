@@ -187,9 +187,8 @@ export default function SignupPage() {
 
       <p className="auth-switch">
         Already have an account?{" "}
-        <Link href="/login" style={{ color: "white" }}>
+        <Link href="/login" style={{ color: "white" }} className="hover:underline">
           Log in
-          <Icon name="chevron" size={13} />
         </Link>
       </p>
     </AuthLayout>

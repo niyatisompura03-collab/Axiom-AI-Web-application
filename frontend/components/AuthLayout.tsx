@@ -22,18 +22,7 @@ export default function AuthLayout({
     <main className="auth-page">
       {/* Top Header */}
       <header className="auth-header">
-        <Link href="/" className="auth-home-link">
-          <Icon name="arrowLeft" size={18} />
-          <span>Your conversations</span>
-        </Link>
-        <button
-          type="button"
-          className="auth-appearance"
-          onClick={() => setShowAppearance(true)}
-        >
-          <SettingsIcon tab="Appearance" />
-          <span>Appearance</span>
-        </button>
+        
       </header>
 
       {/* Main Two-Column Split Layout */}
@@ -62,11 +51,6 @@ export default function AuthLayout({
 
         {/* Right Side: Authentication Form Card */}
         <section className="auth-form-section">
-          <Link href="/" className="back-to-chat">
-            <Icon name="arrowLeft" size={16} />
-            Back to conversation
-          </Link>
-
           <div className="auth-form-wrap">
             <span className="auth-form-icon">
               <Mark size={32} />

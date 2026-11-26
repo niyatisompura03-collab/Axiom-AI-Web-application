@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
+from jose import jwt, JWTError, ExpiredSignatureError
 from passlib.context import CryptContext
-from jose import JWTError
 from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends
@@ -16,7 +15,7 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
 ALGORITHM = "HS256"
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 180
 # -----------------------------
 # Password Hashing
 # -----------------------------
@@ -54,14 +53,14 @@ def create_access_token(
 
     to_encode = data.copy()
 
-    expire = datetime.now(
-        timezone.utc
-    ) + timedelta(
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     to_encode.update(
         {
+            "iat": now,
             "exp": expire
         }
     )
@@ -80,7 +79,8 @@ def decode_access_token(
     return jwt.decode(
         token,
         SECRET_KEY,
-        algorithms=[ALGORITHM]
+        algorithms=[ALGORITHM],
+        options={"require_exp": True},
     )
 
 def get_current_username(
@@ -100,5 +100,11 @@ def get_current_username(
         if username is None:
             raise credentials_exception
         return username
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except JWTError:
         raise credentials_exception

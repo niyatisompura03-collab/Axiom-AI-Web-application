@@ -10,7 +10,7 @@ def test_profile_edge_cases():
     
     # 1. Register & Login
     requests.post(f"{BASE_URL}/auth/register", json={"username": test_user, "password": test_pass})
-    login_resp = requests.post(f"{BASE_URL}/auth/login?username={test_user}&password={test_pass}")
+    login_resp = requests.post(f"{BASE_URL}/auth/login", json={"username": test_user, "password": test_pass})
     assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
     token = login_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -95,7 +95,7 @@ def test_profile_edge_cases():
     
     # DOB Case E: Empty DOB from beginning -> allowed
     requests.post(f"{BASE_URL}/auth/register", json={"username": test_user2, "password": test_pass})
-    login_resp2 = requests.post(f"{BASE_URL}/auth/login?username={test_user2}&password={test_pass}")
+    login_resp2 = requests.post(f"{BASE_URL}/auth/login", json={"username": test_user2, "password": test_pass})
     token2 = login_resp2.json()["access_token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
     me2 = requests.get(f"{BASE_URL}/auth/me", headers=headers2).json()
@@ -103,7 +103,7 @@ def test_profile_edge_cases():
     assert me2["avatar"] is None
     
     # Case F: Refresh / Logout / Login -> state remains correct
-    login_resp3 = requests.post(f"{BASE_URL}/auth/login?username={test_user}&password={test_pass}")
+    login_resp3 = requests.post(f"{BASE_URL}/auth/login", json={"username": test_user, "password": test_pass})
     assert login_resp3.status_code == 200
     token3 = login_resp3.json()["access_token"]
     me3 = requests.get(f"{BASE_URL}/auth/me", headers={"Authorization": f"Bearer {token3}"}).json()
