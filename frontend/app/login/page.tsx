@@ -112,7 +112,7 @@ export default function LoginPage() {
         </label>
 
         <button className="auth-submit" type="submit" disabled={loading}>
-          <span>{loading ? "Signing in..." : "Log in"}</span>
+          <span>{loading ? "Loging in..." : "Log in"}</span>
           <Icon name="arrowLeft" size={17} />
         </button>
       </form>

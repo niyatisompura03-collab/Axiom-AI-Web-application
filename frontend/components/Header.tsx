@@ -12,7 +12,6 @@ interface HeaderProps {
 }
 
 export default function Header({
-  collapsed,
   setCollapsed,
   setSidebar,
   onRenameRequest,

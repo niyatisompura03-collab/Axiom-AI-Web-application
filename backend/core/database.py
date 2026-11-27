@@ -22,8 +22,6 @@ settings_collection = db["settings"]
 password_reset_collection = db["password_resets"]
 document_collection = db["documents"]
 
-from backend.core.embeddings import create_embedding
-
 def _parse_object_id(id_str: str):
     try:
         return ObjectId(id_str)

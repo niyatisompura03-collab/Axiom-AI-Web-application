@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { Icon, Mark, SettingsIcon } from "@/components/FigmaIcons";
-import SettingsModal from "@/components/SettingsModal";
+import React from "react";
+import { Mark } from "@/components/FigmaIcons";
 
 interface AuthLayoutProps {
   title: string;
@@ -16,8 +14,6 @@ export default function AuthLayout({
   description,
   children,
 }: AuthLayoutProps) {
-  const [showAppearance, setShowAppearance] = useState(false);
-
   return (
     <main className="auth-page">
       {/* Top Header */}
@@ -67,15 +63,6 @@ export default function AuthLayout({
       <footer className="auth-footer">
         <span>© {new Date().getFullYear()} Axiom</span>
       </footer>
-
-      {/* Settings Modal (Appearance Tab) */}
-      {showAppearance && (
-        <SettingsModal
-          initialTab="Appearance"
-          open={showAppearance}
-          onClose={() => setShowAppearance(false)}
-        />
-      )}
     </main>
   );
 }

@@ -1,19 +1,7 @@
-import { getToken } from "../utils/token";
+import { getToken, getAuthHeaders, throwIfUnauthorized } from "../utils/token";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-  
-function getHeaders(contentType?: string): Record<string, string> {
-  const headers: Record<string, string> = {};
-  if (contentType) {
-    headers["Content-Type"] = contentType;
-  }
-  const token = getToken();
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
 
 export async function sendMessage(
   conversation_id: string | null,
@@ -21,23 +9,20 @@ export async function sendMessage(
   document_id?: string
 ) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const body: any = {
-      conversation_id,
-      message,
-      timezone,
+  const body: Record<string, string | null | undefined> = {
+    conversation_id,
+    message,
+    timezone,
   };
   if (document_id) body.document_id = document_id;
-  
+
   const response = await fetch(`${API_URL}/chat`, {
     method: "POST",
-    headers: getHeaders("application/json"),
+    headers: getAuthHeaders("application/json"),
     body: JSON.stringify(body),
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to communicate with Axiom backend");
   }
@@ -45,21 +30,14 @@ export async function sendMessage(
   return response.json();
 }
 
-export async function createNewConversation(
-  title: string = "New Chat"
-) {
+export async function createNewConversation(title: string = "New Chat") {
   const response = await fetch(`${API_URL}/conversation/new`, {
     method: "POST",
-    headers: getHeaders("application/json"),
-    body: JSON.stringify({
-      title,
-    }),
+    headers: getAuthHeaders("application/json"),
+    body: JSON.stringify({ title }),
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to create conversation");
   }
@@ -69,13 +47,10 @@ export async function createNewConversation(
 
 export async function getUserConversations() {
   const response = await fetch(`${API_URL}/conversations`, {
-    headers: getHeaders(),
+    headers: getAuthHeaders(),
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to fetch conversations");
   }
@@ -86,13 +61,10 @@ export async function getUserConversations() {
 export async function getConversation(conversation_id: string) {
   const url = `${API_URL}/conversation/${conversation_id}`;
   const response = await fetch(url, {
-    headers: getHeaders(),
+    headers: getAuthHeaders(),
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to fetch conversation");
   }
@@ -106,16 +78,11 @@ export async function renameConversationApi(
 ) {
   const response = await fetch(`${API_URL}/conversation/${conversation_id}`, {
     method: "PATCH",
-    headers: getHeaders("application/json"),
-    body: JSON.stringify({
-      title,
-    }),
+    headers: getAuthHeaders("application/json"),
+    body: JSON.stringify({ title }),
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to rename conversation");
   }
@@ -127,13 +94,10 @@ export async function deleteConversationApi(conversation_id: string) {
   const url = `${API_URL}/conversation/${conversation_id}`;
   const response = await fetch(url, {
     method: "DELETE",
-    headers: getHeaders(),
+    headers: getAuthHeaders(),
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to delete conversation");
   }
@@ -150,19 +114,19 @@ export async function editMessageApi(
   message_index: number,
   new_content: string
 ) {
-  const response = await fetch(`${API_URL}/conversation/${conversation_id}/message`, {
-    method: "PATCH",
-    headers: getHeaders("application/json"),
-    body: JSON.stringify({
-      message_index,
-      new_content,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/conversation/${conversation_id}/message`,
+    {
+      method: "PATCH",
+      headers: getAuthHeaders("application/json"),
+      body: JSON.stringify({
+        message_index,
+        new_content,
+      }),
+    }
+  );
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.detail || "Failed to edit message");
@@ -174,17 +138,14 @@ export async function editMessageApi(
 export async function uploadDocumentApi(file: File) {
   const formData = new FormData();
   formData.append("file", file);
-  
+
   const response = await fetch(`${API_URL}/documents/upload`, {
     method: "POST",
-    headers: getHeaders(), // Do not set Content-Type, fetch sets it with boundary
+    headers: getAuthHeaders(), // Do not set Content-Type, fetch sets it with boundary
     body: formData,
   });
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Failed to upload document");
@@ -195,7 +156,13 @@ export async function uploadDocumentApi(file: File) {
 
 const documentPreviewCache = new Map<
   string,
-  { document_id: string; filename: string; type: string; mime_type?: string; content?: string }
+  {
+    document_id: string;
+    filename: string;
+    type: string;
+    mime_type?: string;
+    content?: string;
+  }
 >();
 
 export async function getDocumentPreviewApi(documentId: string) {
@@ -206,14 +173,14 @@ export async function getDocumentPreviewApi(documentId: string) {
     return cached;
   }
 
-  const response = await fetch(`${API_URL}/documents/${encodeURIComponent(documentId)}`, {
-    headers: getHeaders(),
-  });
+  const response = await fetch(
+    `${API_URL}/documents/${encodeURIComponent(documentId)}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
 
-  if (response.status === 401) {
-    window.dispatchEvent(new Event("auth:unauthorized"));
-    throw new Error("Unauthorized");
-  }
+  throwIfUnauthorized(response);
   if (!response.ok) {
     throw new Error("Failed to fetch document preview");
   }

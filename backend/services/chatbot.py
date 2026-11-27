@@ -1,10 +1,8 @@
 from groq import Groq
 from dotenv import load_dotenv
-import os
 import re
 import base64
 import logging
-import json
 
 from backend.core.database import (
     get_conversation,
@@ -220,12 +218,18 @@ def _is_document_relevant(raw_messages: list) -> bool:
         return True
 
 
+def _fallback_conversation_title(user_input: str) -> str:
+    words = user_input.strip().split()
+    return " ".join(words[:5]) if words else "New Chat"
+
+
 def generate_conversation_title(user_input: str) -> str:
     try:
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             temperature=0.5,
-            max_tokens=25,
+            max_tokens=120,
+            reasoning_effort="low",
             messages=[
                 {
                     "role": "system",
@@ -245,18 +249,17 @@ def generate_conversation_title(user_input: str) -> str:
             ]
         )
 
-        raw_title = response.choices[0].message.content.strip()
+        raw_title = (response.choices[0].message.content or "").strip()
         clean_title = raw_title.replace('"', '').replace("'", "").replace('`', '').strip()
         words = clean_title.split()
 
         if len(words) > 5:
             clean_title = " ".join(words[:5])
 
-        return clean_title if clean_title else "New Chat"
+        return clean_title if clean_title else _fallback_conversation_title(user_input)
 
     except Exception:
-        words = user_input.strip().split()
-        return " ".join(words[:5]) if words else "New Chat"
+        return _fallback_conversation_title(user_input)
 
 def _extract_calculator_expression(text: str) -> str:
     """

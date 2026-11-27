@@ -8,7 +8,6 @@ from backend.core.database import (
     create_conversation,
     rename_conversation,
     delete_conversation,
-    edit_message,
     truncate_conversation_messages
 )
 from backend.core.security import get_current_username

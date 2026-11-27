@@ -39,3 +39,26 @@ export function isTokenExpired(token: string): boolean {
   if (expMs === null) return true;
   return Date.now() >= expMs;
 }
+
+export function getAuthHeaders(contentType?: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (contentType) {
+    headers["Content-Type"] = contentType;
+  }
+  const token = getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export function throwIfUnauthorized(response: Response): void {
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+    const error = new Error("Unauthorized") as Error & { status?: number };
+    error.status = 401;
+    throw error;
+  }
+}

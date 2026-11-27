@@ -5,8 +5,7 @@ import urllib.parse
 import urllib.request
 import urllib.error
 import json
-import logging
-from fastapi import APIRouter, HTTPException, status, Request, Cookie
+from fastapi import APIRouter, HTTPException, status, Cookie
 from fastapi.responses import RedirectResponse
 from backend.core.database import (
     users_collection,
@@ -143,23 +142,11 @@ def google_login():
 
 @router.get("/google/callback")
 def google_callback(
-    request: Request,
     code: Optional[str] = None,
     state: Optional[str] = None,
     error: Optional[str] = None,
     oauth_state: Optional[str] = Cookie(None)
 ):
-    print("STATE FROM GOOGLE:", state)
-    print("STATE FROM COOKIE:", oauth_state)
-
-    print("========== GOOGLE OAUTH DEBUG ==========")
-    print("REQUEST URL:", str(request.url))
-    print("REQUEST HOST:", request.headers.get("host"))
-    print("STATE FROM GOOGLE:", state)
-    print("STATE FROM COOKIE:", oauth_state)
-    print("ALL REQUEST COOKIES:", request.cookies)
-    print("========================================")
-
     if not oauth_state or state != oauth_state:
         raise HTTPException(status_code=400, detail="Invalid state parameter")
         
@@ -168,9 +155,6 @@ def google_callback(
     
     if not code or not state:
         raise HTTPException(status_code=400, detail="Missing code or state")
-        
-    if not oauth_state or state != oauth_state:
-        raise HTTPException(status_code=400, detail="Invalid state parameter")
         
     client_id = os.getenv("GOOGLE_CLIENT_ID")
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -213,7 +197,6 @@ def google_callback(
     email = id_info.get("email")
     if email:
         email = email.strip().lower()
-    name = id_info.get("name")
     
     query = {"google_id": google_id} if not email else {
         "$or": [{"google_id": google_id}, {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}]

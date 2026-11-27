@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 import { Mark, Icon } from "@/components/FigmaIcons";
-import { useChat, Message } from "@/context/ChatContext";
+import { Message } from "@/context/ChatContext";
 
 interface ChatWindowProps {
   messages: Message[];

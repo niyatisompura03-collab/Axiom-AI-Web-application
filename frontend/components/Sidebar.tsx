@@ -41,13 +41,12 @@ function groupConversations(conversations: ConversationSummary[]) {
     }
   }
 
-  return Object.entries(groups).filter(([_, items]) => items.length > 0);
+  return Object.entries(groups).filter(([, items]) => items.length > 0);
 }
 
 export default function Sidebar({
   isOpen,
   setIsOpen,
-  collapsed,
   setCollapsed,
   openSettings,
   openProfile,
